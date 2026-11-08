@@ -7,6 +7,8 @@
  */
 
 import type { ParkScope } from "../background/capture";
+import type { BackendOptions } from "../background/sync/backend/types";
+import type { SyncStatus } from "../background/sync/engine";
 import type { Id, LibrarySnapshot, Settings } from "../data/model";
 
 export interface PingRequest {
@@ -118,6 +120,26 @@ export interface ImportRequest {
   label: string;
 }
 
+export interface SyncGetRequest {
+  type: "sync-get";
+}
+
+export interface SyncConfigureRequest {
+  type: "sync-configure";
+  backendId: string;
+  storeId?: string;
+  options?: BackendOptions;
+  passphrase?: string;
+}
+
+export interface SyncNowRequest {
+  type: "sync-now";
+}
+
+export interface SyncDisableRequest {
+  type: "sync-disable";
+}
+
 export type RequestMessage =
   | PingRequest
   | SnapshotRequest
@@ -134,7 +156,11 @@ export type RequestMessage =
   | QuickListRequest
   | SettingsRequest
   | RepairRequest
-  | ImportRequest;
+  | ImportRequest
+  | SyncGetRequest
+  | SyncConfigureRequest
+  | SyncNowRequest
+  | SyncDisableRequest;
 
 export interface ResponseByRequest {
   ping: PingResponse;
@@ -153,6 +179,10 @@ export interface ResponseByRequest {
   "patch-settings": Settings;
   repair: { repaired: boolean };
   import: { added: number; skipped: number; groupId: Id };
+  "sync-get": SyncStatus;
+  "sync-configure": SyncStatus;
+  "sync-now": SyncStatus;
+  "sync-disable": SyncStatus;
 }
 
 export type ResponseFor<T extends RequestMessage> = ResponseByRequest[T["type"]];
@@ -168,12 +198,8 @@ export interface DataChangedBroadcast {
   ids: Id[];
 }
 
-export interface SyncStatusBroadcast {
+export interface SyncStatusBroadcast extends SyncStatus {
   type: "sync-status";
-  phase: string;
-  queued?: number;
-  lastSyncAt?: number;
-  message?: string;
 }
 
 export type BroadcastMessage = DataChangedBroadcast | SyncStatusBroadcast;
@@ -203,6 +229,10 @@ const REQUEST_TYPES = new Set<string>([
   "patch-settings",
   "repair",
   "import",
+  "sync-get",
+  "sync-configure",
+  "sync-now",
+  "sync-disable",
 ]);
 
 export function isKnownRequest(value: unknown): value is RequestMessage {

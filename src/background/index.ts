@@ -12,7 +12,8 @@ import type { ParkScope } from "./capture";
 import { park } from "./capture";
 import { sweep } from "./maintenance";
 import { installMenus, MENU } from "./menus";
-import { addLink, handle } from "./router";
+import { addLink, broadcast, handle } from "./router";
+import { syncEngine } from "./sync/engine";
 
 const ALARM_SYNC_TICK = "sync-tick";
 const ALARM_MAINTENANCE = "maintenance-tick";
@@ -88,7 +89,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     return;
   }
   if (alarm.name === ALARM_SYNC_TICK) {
-    // M4: the sync engine hooks in here.
+    void syncEngine.syncNow().catch((error) => log("sync tick failed", error));
   }
 });
 
@@ -165,8 +166,13 @@ chrome.commands.onCommand.addListener((command) => {
   }
 });
 
+syncEngine.onStatus((status) => {
+  void broadcast({ type: "sync-status", ...status });
+});
+
 void (async () => {
   installMenus();
   scheduleAlarms();
+  await syncEngine.init();
   log("ready", version());
 })();

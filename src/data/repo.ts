@@ -94,8 +94,16 @@ export async function patchSettings(patch: Partial<Settings>): Promise<Settings>
   return tx(["meta", "change"], "readwrite", async (stores) => {
     const stored = await metaGet<Partial<Settings>>(stores, "settings");
     const next: Settings = { ...DEFAULT_SETTINGS, ...(stored ?? {}), ...patch };
+    const at = Date.now();
     metaPut(stores, "settings", next);
-    pushChange(stores, { op: "settings", patch: patch as Record<string, unknown>, at: Date.now() });
+
+    // Remember when each key changed so a remote merge can order two edits of the
+    // same setting without a vector clock.
+    const madeAts = (await metaGet<Record<string, number>>(stores, "settingsMadeAts")) ?? {};
+    for (const key of Object.keys(patch)) madeAts[key] = at;
+    metaPut(stores, "settingsMadeAts", madeAts);
+
+    pushChange(stores, { op: "settings", patch: patch as Record<string, unknown>, at });
     return next;
   });
 }
@@ -634,6 +642,8 @@ export interface RepairReport {
   missingBacklinks: number;
   duplicateChildren: number;
   orphanedNodes: number;
+  /** Children a node claims as parents but the group did not list. */
+  missingChildren: number;
 }
 
 /**
@@ -651,6 +661,7 @@ export async function repair(): Promise<RepairReport> {
       missingBacklinks: 0,
       duplicateChildren: 0,
       orphanedNodes: 0,
+      missingChildren: 0,
     };
 
     for (const node of nodes) {
@@ -681,6 +692,20 @@ export async function repair(): Promise<RepairReport> {
         node.updatedAt = now;
         writeNode(stores, node);
         pushChange(stores, { op: "reorder", id: node.id, children: node.children, at: now });
+      }
+    }
+
+    // Two devices adding a child to the same group both survive: the record says
+    // which groups it belongs to, so a group that does not list it gains it here.
+    for (const node of nodes) {
+      for (const parentId of node.parents) {
+        const parent = byId.get(parentId);
+        if (parent?.kind !== "group") continue;
+        if (parent.children.includes(node.id)) continue;
+        parent.children.push(node.id);
+        parent.updatedAt = Math.max(parent.updatedAt, node.updatedAt);
+        patched.add(parentId);
+        report.missingChildren += 1;
       }
     }
 
@@ -727,5 +752,164 @@ export async function pruneTombstones(olderThanMs: number): Promise<number> {
       }
     }
     return removed;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// sync support
+// ---------------------------------------------------------------------------
+
+export interface QueuedChange {
+  seq: number;
+  at: number;
+  op: ChangeOp;
+}
+
+/** Reads pending journal entries in sequence order. */
+export async function listQueuedChanges(limit = 500): Promise<QueuedChange[]> {
+  return tx(["change"], "readonly", async (stores) => {
+    const all = await requestToPromise(
+      stores.change.getAll() as unknown as IDBRequest<QueuedChange[]>,
+    );
+    return all
+      .filter((row): row is QueuedChange => typeof row.seq === "number")
+      .sort((a, b) => a.seq - b.seq)
+      .slice(0, limit);
+  });
+}
+
+export async function countQueuedChanges(): Promise<number> {
+  return tx(["change"], "readonly", (stores) =>
+    requestToPromise(stores.change.count() as IDBRequest<number>),
+  );
+}
+
+export async function deleteChanges(seqs: readonly number[]): Promise<void> {
+  if (seqs.length === 0) return;
+  await tx(["change"], "readwrite", (stores) => {
+    for (const seq of seqs) stores.change.delete(seq);
+  });
+}
+
+export interface ApplyResult {
+  applied: number;
+  skipped: number;
+}
+
+/**
+ * Applies a remote batch with last-write-wins per record.
+ *
+ * No journal entry is written: these changes came from elsewhere, and echoing
+ * them would make two devices fight forever.
+ */
+export async function applyRemoteOps(ops: readonly ChangeOp[]): Promise<ApplyResult> {
+  const result: ApplyResult = { applied: 0, skipped: 0 };
+
+  await tx(["node", "tombstone", "meta"], "readwrite", async (stores) => {
+    for (const op of ops) {
+      if (op.op === "upsert") {
+        const incoming = op.node;
+        const existing = await readNode(stores, incoming.id);
+        if (existing) {
+          if (existing.updatedAt > incoming.updatedAt) {
+            result.skipped += 1;
+            continue;
+          }
+          // Equal timestamps must still converge: both devices compare the two
+          // serialisations and keep the same one, so they cannot swap forever.
+          if (
+            existing.updatedAt === incoming.updatedAt &&
+            JSON.stringify(existing) >= JSON.stringify(incoming)
+          ) {
+            result.skipped += 1;
+            continue;
+          }
+        }
+        const tomb = await requestToPromise(
+          stores.tombstone.get(incoming.id) as IDBRequest<Tombstone | undefined>,
+        );
+        if (tomb && tomb.deletedAt >= incoming.updatedAt) {
+          result.skipped += 1;
+          continue;
+        }
+        writeNode(stores, incoming);
+        result.applied += 1;
+        continue;
+      }
+
+      if (op.op === "delete") {
+        const existing = await readNode(stores, op.id);
+        if (!existing) {
+          stores.tombstone.put({
+            id: op.id,
+            deletedAt: op.at,
+            reason: "deleted",
+          } satisfies Tombstone);
+          result.skipped += 1;
+          continue;
+        }
+        if (existing.updatedAt > op.at) {
+          result.skipped += 1;
+          continue;
+        }
+        stores.node.delete(op.id);
+        stores.tombstone.put({
+          id: op.id,
+          deletedAt: op.at,
+          reason: "deleted",
+        } satisfies Tombstone);
+        result.applied += 1;
+        continue;
+      }
+
+      if (op.op === "reorder") {
+        const existing = await readNode(stores, op.id);
+        if (existing?.kind !== "group" || existing.updatedAt > op.at) {
+          result.skipped += 1;
+          continue;
+        }
+        existing.children = [...op.children];
+        existing.updatedAt = op.at;
+        writeNode(stores, existing);
+        result.applied += 1;
+        continue;
+      }
+
+      // settings: per-key last-write-wins
+      const madeAts = (await metaGet<Record<string, number>>(stores, "settingsMadeAts")) ?? {};
+      const stored = (await metaGet<Partial<Settings>>(stores, "settings")) ?? {};
+      let changed = false;
+      for (const [key, value] of Object.entries(op.patch)) {
+        const previous = madeAts[key] ?? 0;
+        if (op.at <= previous) continue;
+        (stored as Record<string, unknown>)[key] = value;
+        madeAts[key] = op.at;
+        changed = true;
+      }
+      if (changed) {
+        metaPut(stores, "settings", { ...DEFAULT_SETTINGS, ...stored });
+        metaPut(stores, "settingsMadeAts", madeAts);
+        result.applied += 1;
+      } else {
+        result.skipped += 1;
+      }
+    }
+  });
+
+  return result;
+}
+
+/** Every record, for the snapshot a compacted chunk carries. */
+export async function allNodes(): Promise<Node[]> {
+  return tx(["node"], "readonly", (stores) => readAllNodes(stores));
+}
+
+/** Records the local timestamp of a settings change so remote merges can order it. */
+export async function markSettingsChanged(patch: Partial<Settings>): Promise<void> {
+  await tx(["meta"], "readwrite", async (stores) => {
+    const madeAts = (await metaGet<Record<string, number>>(stores, "settingsMadeAts")) ?? {};
+    const at = Date.now();
+    for (const key of Object.keys(patch)) madeAts[key] = at;
+    metaPut(stores, "settingsMadeAts", madeAts);
   });
 }

@@ -28,6 +28,20 @@ export interface Stores {
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
+let factory: IDBFactory | null = null;
+
+/**
+ * Swaps the IndexedDB factory. Used by tests to give several "devices" isolated
+ * databases inside one process; production never calls this.
+ */
+export function setIndexedDbFactory(next: IDBFactory | null): void {
+  factory = next;
+  dbPromise = null;
+}
+
+function idb(): IDBFactory {
+  return factory ?? globalThis.indexedDB;
+}
 
 function seed(transaction: IDBTransaction): void {
   const now = Date.now();
@@ -72,7 +86,7 @@ function upgrade(db: IDBDatabase, oldVersion: number): void {
 
 export function openDb(): Promise<IDBDatabase> {
   dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = idb().open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (event) => upgrade(request.result, event.oldVersion);
     request.onsuccess = () => {
       const db = request.result;
@@ -163,4 +177,15 @@ export async function readOne<T>(store: StoreName, key: IDBValidKey): Promise<T 
 /** Test/repair helper: drops the in-memory connection so the next call reopens. */
 export function resetDbConnectionForTests(): void {
   dbPromise = null;
+}
+
+/** Deletes the database in the active factory. Used by tests to start clean. */
+export async function deleteDb(): Promise<void> {
+  resetDbConnectionForTests();
+  await new Promise<void>((resolve, reject) => {
+    const request = idb().deleteDatabase(DB_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => resolve();
+  });
 }

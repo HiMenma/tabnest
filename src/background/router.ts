@@ -24,6 +24,7 @@ import {
 import type { BroadcastMessage, RequestMessage, ResponseFor } from "../types/messages";
 import { describeOutcome, park } from "./capture";
 import { openNodes } from "./open";
+import { syncEngine } from "./sync/engine";
 
 export async function broadcast(message: BroadcastMessage): Promise<void> {
   try {
@@ -35,6 +36,8 @@ export async function broadcast(message: BroadcastMessage): Promise<void> {
 
 function changed(ids: Id[]): void {
   void broadcast({ type: "data-changed", ids });
+  // A local mutation is a sync candidate; the engine debounces.
+  syncEngine.schedule();
 }
 
 export async function handle(request: RequestMessage): Promise<unknown> {
@@ -127,6 +130,23 @@ export async function handle(request: RequestMessage): Promise<unknown> {
       changed([result.groupId]);
       return result;
     }
+
+    case "sync-get":
+      return syncEngine.status();
+
+    case "sync-configure":
+      return syncEngine.configure({
+        backendId: request.backendId,
+        ...(request.storeId === undefined ? {} : { storeId: request.storeId }),
+        ...(request.options === undefined ? {} : { options: request.options }),
+        ...(request.passphrase === undefined ? {} : { passphrase: request.passphrase }),
+      });
+
+    case "sync-now":
+      return syncEngine.syncNow();
+
+    case "sync-disable":
+      return syncEngine.disable();
 
     case "repair": {
       const report = await repair();

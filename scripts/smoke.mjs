@@ -53,7 +53,7 @@ try {
     ["pages/library.html", ".tn-toolbar"],
     ["pages/options.html", ".tn-page"],
     ["pages/import.html", ".tn-page"],
-    ["pages/sync.html", ".tn-main"],
+    ["pages/sync.html", ".tn-page"],
   ]) {
     const page = await context.newPage();
     await page.goto(`${origin}/${path}`);
@@ -136,6 +136,36 @@ try {
   check("snapshot exposes three tabs", stats.tabs === 3, String(stats.tabs));
   check("quick list accepts a member", stats.quick === 1, String(stats.quick));
   check("trash receives a deleted tab", stats.inTrash === true);
+
+  // --- sync: chrome.storage.sync as the default backend -------------------
+  const syncResult = await library.evaluate(async () => {
+    const configured = await chrome.runtime.sendMessage({
+      type: "sync-configure",
+      backendId: "chrome-sync",
+    });
+    const afterFirst = await chrome.runtime.sendMessage({ type: "sync-now" });
+    const stored = await chrome.storage.sync.get(null);
+    const keys = Object.keys(stored);
+    const afterSecond = await chrome.runtime.sendMessage({ type: "sync-now" });
+    const storedAgain = await chrome.storage.sync.get(null);
+    return {
+      phase: configured.phase,
+      storeId: configured.storeId,
+      chunkKeys: keys.filter((key) => key.includes("/d/")).length,
+      chunkKeysAfterIdleSync: Object.keys(storedAgain).filter((key) => key.includes("/d/")).length,
+      queuedAfterSync: afterFirst.queued,
+      bytes: keys.reduce((sum, key) => sum + String(stored[key]).length, 0),
+      secondPhase: afterSecond.phase,
+    };
+  });
+  check("sync turns on", syncResult.phase === "idle", String(syncResult.phase));
+  check("chunks reached chrome.storage.sync", syncResult.chunkKeys > 0, `${syncResult.chunkKeys}`);
+  check("sync drains the queue", syncResult.queuedAfterSync === 0, `${syncResult.queuedAfterSync}`);
+  check(
+    "an idle sync writes nothing new",
+    syncResult.chunkKeysAfterIdleSync === syncResult.chunkKeys,
+    `${syncResult.chunkKeys} -> ${syncResult.chunkKeysAfterIdleSync}`,
+  );
 
   // --- scale: 5000 records ------------------------------------------------
   const bulk = await library.evaluate(async (fixturePort) => {

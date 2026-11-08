@@ -1,0 +1,45 @@
+/* Sync surface: status meter plus the backend form. */
+
+.tn-sync-stats {
+  display: flex;
+  gap: var(--tn-4);
+  flex-wrap: wrap;
+  color: var(--tn-fg-muted);
+  font-size: var(--tn-fs-sm);
+  margin-bottom: var(--tn-2);
+}
+
+.tn-sync-error {
+  margin: 0 0 var(--tn-4);
+  padding: 8px 12px;
+  border-radius: var(--tn-r-sm);
+  background: color-mix(in srgb, var(--tn-danger) 12%, transparent);
+  color: var(--tn-danger);
+  font-size: var(--tn-fs-sm);
+}
+
+.tn-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--tn-bg-hover);
+  overflow: hidden;
+  margin: var(--tn-2) 0 var(--tn-1);
+}
+
+.tn-meter-fill {
+  height: 100%;
+  background: var(--tn-accent);
+  border-radius: 999px;
+  transition: width 160ms ease-out;
+}
+
+.tn-store-id {
+  font-family: var(--tn-mono);
+  font-size: var(--tn-fs-sm);
+  background: var(--tn-bg-sunken);
+  border: 1px solid var(--tn-border);
+  border-radius: var(--tn-r-sm);
+  padding: 3px 6px;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
