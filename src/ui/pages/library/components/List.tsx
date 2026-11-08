@@ -199,7 +199,7 @@ function Row({
           <button
             type="button"
             className={`tn-quick${inQuickList ? " tn-quick--on" : ""}`}
-            title="Toggle quick list"
+            title={t("row.quickList")}
             onClick={(event) => {
               event.stopPropagation();
               onToggleQuick(node.id, !inQuickList);

@@ -250,7 +250,10 @@ function SyncApp() {
               ))}
             </select>
             {backend.id === "chrome-sync" ? (
-              <span className="tn-hint">{t("sync.limitWarning")}</span>
+              <>
+                <span className="tn-hint">{t("sync.chromeSync.gate")}</span>
+                <span className="tn-hint">{t("sync.limitWarning")}</span>
+              </>
             ) : null}
           </span>
         </label>
@@ -351,10 +354,10 @@ function SyncApp() {
               value={storeId}
               spellCheck={false}
               readOnly={configured}
-              placeholder="leave empty to create a new store"
+              placeholder={t("sync.storeId.placeholder")}
               onChange={(event) => setStoreId(event.currentTarget.value)}
             />
-            <span className="tn-hint">Paste an existing store id to join it from this device.</span>
+            <span className="tn-hint">{t("sync.storeId.hint")}</span>
           </span>
         </label>
 

@@ -46,6 +46,8 @@
 
 `chrome.storage.sync` 只有约 100 KB，大致相当于 1500–2500 个标签。超出时引擎会暂停并说明原因，**绝不静默截断**。库更大就指向 WebDAV 或自建端点。
 
+**它还需要浏览器已登录账号。** `chrome.storage.sync` 是 Chrome 同步的扩展数据通道，不是网盘目录：只有在浏览器登录了 Google 账号且开启同步时才会复制到别的设备。未登录时，Chrome 官方文档的原话是这个存储区「行为类似 `storage.local`」——写入照样成功，数据留在本机配置目录里，一个字节都不会上传。这种失败是静默的：API 两种情况都返回成功，而扩展若不申请读取邮箱地址就无法查询同步状态。**唯一的证明是第二台设备能看到数据。** 磁盘位置与完整前提见 [docs/backends.md](docs/backends.md#the-chrome-sync-backend)。
+
 协议、冲突规则与配额守卫见 [docs/sync-design.md](docs/sync-design.md)；端点契约、curl 示例和 Cloudflare Worker 见 [docs/backends.md](docs/backends.md)。
 
 ## 安装（未打包）

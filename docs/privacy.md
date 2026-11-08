@@ -19,12 +19,12 @@ sent anywhere, hashed or otherwise, unless sync or export is used.
 
 ## What leaves the device, and only on purpose
 
-| Path                  | Trigger                  | What is sent                                             | Encrypted                                                                    |
-| --------------------- | ------------------------ | -------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Chosen sync backend   | sync enabled by the user | chunk payloads, `storeId`, `deviceId`, `seq`, timestamps | passphrase mode for every external backend; off by default for `chrome-sync` |
-| `chrome.storage.sync` | user picks that backend  | same, inside the user's own Google account               | optional                                                                     |
-| Export file           | user clicks export       | whatever the user chose to export                        | optional                                                                     |
-| Site icons            | rendering a list row     | **nothing** — Chrome's local `_favicon` API              | n/a                                                                          |
+| Path                  | Trigger                  | What is sent                                                                                                                  | Encrypted                                                                    |
+| --------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Chosen sync backend   | sync enabled by the user | chunk payloads, `storeId`, `deviceId`, `seq`, timestamps                                                                      | passphrase mode for every external backend; off by default for `chrome-sync` |
+| `chrome.storage.sync` | user picks that backend  | same, inside the user's own Google account when the profile is signed in with sync on; otherwise it never leaves this machine | optional                                                                     |
+| Export file           | user clicks export       | whatever the user chose to export                                                                                             | optional                                                                     |
+| Site icons            | rendering a list row     | **nothing** — Chrome's local `_favicon` API                                                                                   | n/a                                                                          |
 
 Explicitly **not** done:
 
@@ -38,8 +38,10 @@ Explicitly **not** done:
 ## Per-backend reality check
 
 - **`chrome.storage.sync`** — data lives in the user's Google account and is
-  encrypted in transit by Chrome. Google can read it; the sync page says so in
-  those words. Use passphrase mode if that is not acceptable, or another backend.
+  encrypted in transit by Chrome, but only while the browser profile is signed in
+  with sync enabled; signed out, the same writes stay in that machine's profile
+  and are never uploaded. Google can read it; the sync page says so in those
+  words. Use passphrase mode if that is not acceptable, or another backend.
 - **WebDAV / custom HTTP / Gist** — the operator of that storage sees chunk sizes
   and timings, and with the `storeId`/`deviceId` can correlate devices. Content is
   AES-GCM encrypted with a key derived from a passphrase the operator never sees.

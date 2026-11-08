@@ -35,7 +35,7 @@ export function Detail({
     .join(" / ");
 
   return (
-    <aside className="tn-detail" aria-label="Details">
+    <aside className="tn-detail" aria-label={t("detail.title")}>
       <h2 className="tn-detail-title">{t("detail.title")}</h2>
       {trail ? <p className="tn-detail-trail">{trail}</p> : null}
 

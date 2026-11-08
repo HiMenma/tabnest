@@ -41,6 +41,47 @@ trusted for correctness; a backend that cannot list can still work by serving
 which makes `idx.json` authoritative and loses the ability to recover from a
 lost index).
 
+## The `chrome-sync` backend
+
+`chrome.storage.sync` is not a file store and not a Drive folder: it is Chrome
+Sync's channel for extension data. It has four preconditions, all on the browser
+side, and the extension cannot verify any of them:
+
+1. the profile is signed in to a Google account;
+2. sync is turned on for that account;
+3. the "Extensions" data type is included in what sync covers;
+4. Chrome is online — offline writes queue locally and flush later.
+
+When any of 1–3 fails, Chrome's documentation says the area "behaves like
+`storage.local`": `set()` resolves, `getBytesInUse()` counts against the same
+quota, and the bytes land in that machine's profile only. Nothing reports an
+error, and no API exposes sync state short of `identity.getProfileUserInfo()`,
+which needs the `identity.email` permission and returns an empty result both
+when sync is off and when the permission is missing. TabNest therefore shows a
+hint next to the selector instead of pretending to know, and treats a second
+device as the only proof.
+
+Where the bytes are, on macOS (other platforms use the equivalent profile
+directory):
+
+```
+<Profile>/Sync Extension Settings/<extension-id>/    the chunks this profile holds
+<Profile>/Sync Data/                                Chrome's sync engine database
+<Profile>/Local Extension Settings/<extension-id>/  storage.local, for contrast
+```
+
+`Sync Extension Settings` is a LevelDB, and each chunk key is the literal
+`<storeId>/d/<deviceId>/<seq>.c` from the routes above — `strings` over its
+`*.log` and `*.ldb` files shows exactly what this profile is holding. Signed out,
+that directory is the end of the line for the data; signed in, the same records
+are uploaded through Chrome Sync and `Sync Data` is where the engine keeps its
+bookkeeping.
+
+Extension settings are encrypted in transit. At rest they are readable by Google
+unless the user set a custom sync passphrase. If that is not acceptable, use
+passphrase mode — TabNest then encrypts payloads itself before they reach the
+API — or another backend.
+
 ## Authentication
 
 Either form is accepted; the extension sends whichever the user selected:

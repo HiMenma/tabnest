@@ -7,7 +7,9 @@ Status: designed (M4/M5 implement it). This document is the contract; code follo
 - Several devices, each with a full copy of the library.
 - No first-party server, so no place to run conflict logic.
 - The default backend is `chrome.storage.sync`: 100 KB total, 8 KB per entry,
-  512 entries, and **no compare-and-swap**.
+  512 entries, and **no compare-and-swap**. It also replicates only for a
+  signed-in profile; signed out it degrades to local-only writes with no error
+  surfaced (see [backends.md](backends.md#the-chrome-sync-backend)).
 - The other backends are dumb file stores (WebDAV folder, Gist files, a handful
   of HTTP routes).
 

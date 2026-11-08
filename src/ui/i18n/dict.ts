@@ -73,6 +73,7 @@ export const en: Dict = {
   "nav.deleteList": "Move to trash",
   "list.records": "Records",
   "row.archived": "Archived",
+  "row.quickList": "Toggle quick list",
 
   "nav.quickList": "Quick list",
   "nav.allLists": "All lists",
@@ -215,6 +216,11 @@ export const en: Dict = {
   "sync.howItWorksBody":
     "Each device appends its changes under its own key prefix, so two devices never write the same key. Conflicts resolve to the newest record, and a deletion is remembered for 90 days so an offline device cannot bring it back.",
   "sync.limitWarning": "chrome.storage.sync holds about 100 KB — roughly 1500 to 2500 tabs.",
+  "sync.chromeSync.gate":
+    "Replicates only while this browser profile is signed in to a Google account with sync on. Signed out, Chrome writes to this machine and uploads nothing — which looks the same from inside the extension.",
+  "sync.storeId.placeholder": "Leave empty to create a new store",
+  "sync.storeId.hint":
+    "Paste an existing store id to join it from this device. Same id plus the same passphrase is what makes two devices one library.",
 
   "sync.backend.http": "Custom endpoint",
   "sync.backend.webdav": "WebDAV",
@@ -312,6 +318,7 @@ export const zhCN: Dict = {
   "nav.deleteList": "移到回收站",
   "list.records": "记录",
   "row.archived": "已归档",
+  "row.quickList": "切换快捷列表",
 
   "nav.quickList": "快速列表",
   "nav.allLists": "全部列表",
@@ -454,6 +461,11 @@ export const zhCN: Dict = {
   "sync.howItWorksBody":
     "每台设备只往自己的键前缀追加变更，两台设备永不写同一个键。冲突按最新记录取胜；删除会保留 90 天，避免离线设备把已删条目复活。",
   "sync.limitWarning": "chrome.storage.sync 上限约 100 KB，大致相当于 1500 到 2500 个标签。",
+  "sync.chromeSync.gate":
+    "仅当本浏览器已登录 Google 账号并开启同步时才会复制到其他设备。未登录时 Chrome 只写在本机、不会上传——在扩展里看这一过程和同步成功没有区别。",
+  "sync.storeId.placeholder": "留空则新建一个存储",
+  "sync.storeId.hint":
+    "粘贴已有存储 ID，这台设备就加入它。同一个 ID 加同一口令，两台设备才是同一个库。",
 
   "sync.backend.http": "自定义端点",
   "sync.backend.webdav": "WebDAV",

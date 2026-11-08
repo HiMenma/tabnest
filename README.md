@@ -71,6 +71,17 @@ your live shortcuts; light and dark themes; English and Chinese.
 engine pauses and tells you why; it never truncates silently. For bigger
 libraries, point it at WebDAV or your own endpoint.
 
+**It also needs a signed-in profile.** `chrome.storage.sync` is Chrome Sync's
+extension-data channel, not a Drive folder: it replicates only when the browser
+is signed in to a Google account with sync on. Signed out, Chrome's own
+documentation says the area "behaves like `storage.local`" — every write
+succeeds, the data stays in that machine's profile, and nothing is uploaded.
+That failure is silent, because the API returns success either way and no
+extension can query sync state without asking for your email address. Two
+devices are the only proof. See
+[docs/backends.md](docs/backends.md#the-chrome-sync-backend) for the
+on-disk location and the full list of preconditions.
+
 The protocol, the conflict rules and the quota guard are in
 [docs/sync-design.md](docs/sync-design.md); the endpoint contract, with curl
 examples and a Cloudflare Worker, is in [docs/backends.md](docs/backends.md).
