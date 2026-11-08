@@ -5,6 +5,7 @@
 
 import type { Id } from "../data/model";
 import {
+  type CommitParkResult,
   commitPark,
   createGroup,
   deleteNodes,
@@ -43,6 +44,9 @@ export async function handle(request: RequestMessage): Promise<unknown> {
 
     case "snapshot":
       return loadSnapshot();
+
+    case "settings":
+      return getSettings();
 
     case "park": {
       const outcome = await park(request.scope);
@@ -152,5 +156,13 @@ export async function importUrls(
 }
 
 export type { ResponseFor };
+/** Adds a single URL (context-menu "park this link") to the root list. */
+export async function addLink(url: string, title?: string): Promise<CommitParkResult> {
+  const prepared = await prepareTabs([title === undefined ? { url } : { url, title }]);
+  const result = await commitPark(prepared, { targetParentId: "root" });
+  changed([result.groupId]);
+  return result;
+}
+
 /** Settings are read by the pages through the snapshot; this is for commands. */
 export { getSettings };

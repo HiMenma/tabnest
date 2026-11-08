@@ -1,5 +1,8 @@
 import type { Id, LibrarySnapshot, Node, TabItem } from "../../data/model";
 
+/** A view id, not a record: the sidebar's Archive entry. */
+export const ARCHIVE_VIEW = "archive";
+
 /** Ordered children of a group, skipping ids that no longer exist. */
 export function childrenOf(map: Map<Id, Node>, id: Id): Node[] {
   const group = map.get(id);

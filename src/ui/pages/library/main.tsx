@@ -1,21 +1,40 @@
 import { type DragEvent, useEffect, useMemo, useRef } from "react";
 import { mount } from "../../mount";
 import "./library.css";
-import { type Id, type Node, QUICK_LIST_ID, ROOT_ID, TRASH_ID } from "../../../data/model";
+import {
+  type Id,
+  type Node,
+  QUICK_LIST_ID,
+  ROOT_ID,
+  type TabItem,
+  TRASH_ID,
+} from "../../../data/model";
 import { actions } from "../../data/actions";
 import { startBroadcastBridge, useLibrary } from "../../data/store";
-import { buildMap, childrenOf, countTabs, directTabs, searchTabs } from "../../data/tree";
+import {
+  ARCHIVE_VIEW,
+  buildMap,
+  childrenOf,
+  countTabs,
+  directTabs,
+  searchTabs,
+} from "../../data/tree";
+import { initLocale, t, tCount } from "../../i18n";
+import { applyTheme } from "../../shared/theme";
 import { Detail } from "./components/Detail";
 import { List } from "./components/List";
 import { Sidebar } from "./components/Sidebar";
 import { Toolbar } from "./components/Toolbar";
 
+initLocale();
+
 function headingFor(map: Map<Id, Node>, id: Id): string {
-  if (id === ROOT_ID) return "All lists";
-  if (id === QUICK_LIST_ID) return "Quick list";
-  if (id === TRASH_ID) return "Trash";
+  if (id === ROOT_ID) return t("nav.allLists");
+  if (id === QUICK_LIST_ID) return t("nav.quickList");
+  if (id === TRASH_ID) return t("nav.trash");
+  if (id === ARCHIVE_VIEW) return t("nav.archive");
   const node = map.get(id);
-  return node?.kind === "group" ? (node.label ?? "Folder") : "Library";
+  return node?.kind === "group" ? (node.label ?? t("nav.folder")) : t("app.name");
 }
 
 function LibraryApp() {
@@ -33,7 +52,22 @@ function LibraryApp() {
   const setError = useLibrary((state) => state.setError);
 
   const map = useMemo(() => buildMap(snapshot), [snapshot]);
-  const rows = useMemo(() => childrenOf(map, selectedGroupId), [map, selectedGroupId]);
+  const archived = useMemo(
+    () =>
+      (snapshot?.nodes ?? [])
+        .filter((node): node is TabItem => node.kind === "tab" && node.archivedAt !== undefined)
+        .sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0)),
+    [snapshot],
+  );
+
+  const inArchive = selectedGroupId === ARCHIVE_VIEW;
+  const inTrash = selectedGroupId === TRASH_ID;
+
+  const rows: Node[] = useMemo(
+    () => (inArchive ? archived : childrenOf(map, selectedGroupId)),
+    [inArchive, archived, map, selectedGroupId],
+  );
+
   const hits = useMemo(() => (query.trim() ? searchTabs(map, query) : undefined), [map, query]);
   const visibleIds = useMemo(
     () => (hits ? hits.map((hit) => hit.node.id) : rows.map((node) => node.id)),
@@ -46,16 +80,20 @@ function LibraryApp() {
     return startBroadcastBridge();
   }, [refresh]);
 
-  const inTrash = selectedGroupId === TRASH_ID;
+  useEffect(() => {
+    applyTheme(snapshot?.settings.theme);
+  }, [snapshot?.settings.theme]);
+
   const subtitle = useMemo(() => {
+    if (inArchive) return tCount("header.tabs", "header.tabsOne", archived.length);
     const tabs = directTabs(map, selectedGroupId).length;
     const groups = childrenOf(map, selectedGroupId).filter((node) => node.kind === "group").length;
     const deep = countTabs(map, selectedGroupId);
-    const parts = [`${tabs} tab${tabs === 1 ? "" : "s"}`];
-    if (groups > 0) parts.push(`${groups} group${groups === 1 ? "" : "s"}`);
-    if (deep !== tabs) parts.push(`${deep} in total`);
+    const parts = [tCount("header.tabs", "header.tabsOne", tabs)];
+    if (groups > 0) parts.push(tCount("header.groups", "header.groupsOne", groups));
+    if (deep !== tabs) parts.push(t("header.total", { count: deep }));
     return parts.join(" · ");
-  }, [map, selectedGroupId]);
+  }, [map, selectedGroupId, inArchive, archived.length]);
 
   const singleTab = useMemo(() => {
     if (selection.size !== 1) return undefined;
@@ -77,7 +115,7 @@ function LibraryApp() {
   };
 
   const onOpen = (id: Id): void => {
-    void actions.open([id], "tab");
+    void actions.open([id], snapshot?.settings.openIn ?? "tab");
   };
 
   const onRename = (id: Id, label: string): void => {
@@ -85,10 +123,6 @@ function LibraryApp() {
     if (!node) return;
     if (node.kind === "tab") void actions.updateTitle(id, label);
     else void actions.renameGroup(id, label);
-  };
-
-  const onToggleQuick = (id: Id, member: boolean): void => {
-    void actions.quickList(id, member);
   };
 
   const onDragStartRow = (id: Id, event: DragEvent): void => {
@@ -132,7 +166,7 @@ function LibraryApp() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       const target = event.target as HTMLElement | null;
-      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
         event.preventDefault();
@@ -146,7 +180,7 @@ function LibraryApp() {
       }
       if (event.key === "Enter" && selection.size > 0) {
         event.preventDefault();
-        void actions.open([...selection], "tab");
+        void actions.open([...selection], snapshot?.settings.openIn ?? "tab");
         return;
       }
       if ((event.key === "Delete" || event.key === "Backspace") && selection.size > 0 && !inTrash) {
@@ -157,23 +191,28 @@ function LibraryApp() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [visibleIds, selection, inTrash, query, setSelection, clearSelection, setQuery]);
+  }, [visibleIds, selection, inTrash, query, setSelection, clearSelection, setQuery, snapshot]);
 
   const selected = [...selection];
 
   return (
     <div className={`tn-library${singleTab ? " tn-library--with-detail" : ""}`}>
-      <Sidebar map={map} selectedId={selectedGroupId} onSelect={selectGroup} />
+      <Sidebar
+        map={map}
+        selectedId={selectedGroupId}
+        onSelect={selectGroup}
+        archivedCount={archived.length}
+      />
 
       <section className="tn-library-main">
         <header className="tn-header-row">
-          <h1>{hits ? "Search results" : headingFor(map, selectedGroupId)}</h1>
+          <h1>{hits ? t("header.searchResults") : headingFor(map, selectedGroupId)}</h1>
           <span className="tn-header-sub">
-            {hits ? `${hits.length} match${hits.length === 1 ? "" : "es"}` : subtitle}
+            {hits ? tCount("header.matches", "header.matchesOne", hits.length) : subtitle}
           </span>
           <div className="tn-toolbar-gap" />
           <span className="tn-header-sub">
-            {snapshot ? `${snapshot.stats.tabs} tabs stored` : "loading…"}
+            {snapshot ? t("toolbar.stored", { count: snapshot.stats.tabs }) : t("app.loading")}
           </span>
         </header>
 
@@ -182,15 +221,17 @@ function LibraryApp() {
           onQuery={setQuery}
           selectionCount={selection.size}
           inTrash={inTrash}
+          inArchive={inArchive}
           onParkWindow={() => void actions.parkWindow()}
           onParkTab={() => void actions.parkCurrentTab()}
           onNewFolder={() => {
-            const label = window.prompt("Folder name");
+            const label = window.prompt(t("header.folderName"));
             if (label) void actions.newFolder(label, selectedGroupId);
           }}
-          onOpenSelected={() => void actions.open(selected, "tab")}
+          onOpenSelected={() => void actions.open(selected, snapshot?.settings.openIn ?? "tab")}
           onArchiveSelected={() => {
-            for (const id of selected) void actions.setArchived(id, true);
+            const next = !inArchive;
+            for (const id of selected) void actions.setArchived(id, next);
           }}
           onDeleteSelected={() => {
             void actions.remove(selected, "trash");
@@ -209,7 +250,7 @@ function LibraryApp() {
 
         {error ? (
           <button type="button" className="tn-error-bar" onClick={() => setError(null)}>
-            {error} — dismiss
+            {error} — {t("common.close")}
           </button>
         ) : null}
 
@@ -221,7 +262,7 @@ function LibraryApp() {
           onOpen={onOpen}
           onEnterGroup={(id) => selectGroup(id)}
           onRename={onRename}
-          onToggleQuick={onToggleQuick}
+          onToggleQuick={(id, member) => void actions.quickList(id, member)}
           onDragStartRow={onDragStartRow}
           onDropRow={onDropRow}
         />
@@ -236,8 +277,8 @@ function LibraryApp() {
           onSaveNotes={(id, notes) => void actions.updateNotes(id, notes)}
           onSaveRating={(id, rating) => void actions.updateRating(id, rating)}
           onSaveUrl={(id, url) => void actions.updateUrl(id, url)}
-          onOpen={(id) => void actions.open([id], "tab")}
-          onArchive={(id, archived) => void actions.setArchived(id, archived)}
+          onOpen={(id) => void actions.open([id], snapshot?.settings.openIn ?? "tab")}
+          onArchive={(id, archivedNow) => void actions.setArchived(id, archivedNow)}
         />
       ) : null}
     </div>

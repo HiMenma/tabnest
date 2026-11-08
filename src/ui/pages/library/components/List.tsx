@@ -2,6 +2,7 @@ import { type DragEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 import type { Id, Node, TabItem } from "../../../../data/model";
 import type { SearchHit } from "../../../data/tree";
 import { formatDate } from "../../../data/tree";
+import { t, tCount } from "../../../i18n";
 import { useVirtual } from "../../../shared/useVirtual";
 
 const ROW_HEIGHT = 30;
@@ -84,6 +85,7 @@ function Row({
   const label = isTab ? (tab?.title ?? "") : node.kind === "group" ? (node.label ?? "Folder") : "";
   const childCount = isTab ? 0 : (node as { children: Id[] }).children.length;
   const inQuickList = (tab?.parents ?? []).includes("quickList");
+  const isArchived = tab?.archivedAt !== undefined;
 
   const commit = (value: string): void => {
     setEditing(false);
@@ -124,6 +126,7 @@ function Row({
         selected ? "tn-row-item--selected" : "",
         over ? "tn-row-item--over" : "",
         isTab ? "" : "tn-row-item--group",
+        isArchived ? "tn-row-item--archived" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -173,9 +176,7 @@ function Row({
           </span>
         )}
         {!isTab && trail === undefined ? (
-          <span className="tn-row-sub">
-            {childCount} item{childCount === 1 ? "" : "s"}
-          </span>
+          <span className="tn-row-sub">{tCount("row.items", "row.itemOne", childCount)}</span>
         ) : null}
         {isTab && trail ? <span className="tn-row-sub">{trail}</span> : null}
       </div>
@@ -200,6 +201,7 @@ function Row({
           >
             ★
           </button>
+          {isArchived ? <span className="tn-archived-badge">{t("row.archived")}</span> : null}
           <span className="tn-row-date">{formatDate(tab.createdAt)}</span>
         </>
       ) : (
@@ -243,7 +245,7 @@ export function List({
   if (entries.length === 0) {
     return (
       <div className="tn-empty tn-list-empty">
-        {hits ? "Nothing matches that search." : "Nothing here yet. Park some tabs to fill it."}
+        {hits ? t("empty.noMatches") : t("empty.noRecords")}
       </div>
     );
   }
@@ -253,7 +255,7 @@ export function List({
       <div
         role="listbox"
         aria-multiselectable="true"
-        aria-label="Records"
+        aria-label={t("list.records")}
         style={{ height: totalHeight, position: "relative" }}
       >
         {entries.slice(range.start, range.end).map((entry, offset) => (

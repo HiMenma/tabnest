@@ -3,16 +3,19 @@
  *
  * Responsibilities, in order of importance:
  *   1. route page requests to the repository (single writer),
- *   2. turn commands and context-menu clicks into parking operations,
- *   3. keep alarms alive for the sync engine.
+ *   2. turn commands, context-menu clicks and shortcuts into parking operations,
+ *   3. keep the alarms that maintenance and sync run on.
  */
 
 import { isKnownRequest, type RequestMessage } from "../types/messages";
 import type { ParkScope } from "./capture";
 import { park } from "./capture";
-import { handle } from "./router";
+import { sweep } from "./maintenance";
+import { installMenus, MENU } from "./menus";
+import { addLink, handle } from "./router";
 
 const ALARM_SYNC_TICK = "sync-tick";
+const ALARM_MAINTENANCE = "maintenance-tick";
 
 function version(): string {
   return chrome.runtime.getManifest().version;
@@ -60,20 +63,32 @@ async function parkWithFeedback(scope: ParkScope): Promise<void> {
   }
 }
 
+function scheduleAlarms(): void {
+  chrome.alarms.create(ALARM_SYNC_TICK, { periodInMinutes: 1 });
+  chrome.alarms.create(ALARM_MAINTENANCE, { periodInMinutes: 60 * 24, delayInMinutes: 5 });
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
   log("onInstalled", details.reason, version());
-  chrome.alarms.create(ALARM_SYNC_TICK, { periodInMinutes: 1 });
+  installMenus();
+  scheduleAlarms();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   log("onStartup", version());
-  chrome.alarms.create(ALARM_SYNC_TICK, { periodInMinutes: 1 });
+  installMenus();
+  scheduleAlarms();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARM_MAINTENANCE) {
+    void sweep()
+      .then((result) => log("sweep", result))
+      .catch((error) => log("sweep failed", error));
+    return;
+  }
   if (alarm.name === ALARM_SYNC_TICK) {
     // M4: the sync engine hooks in here.
-    log("alarm", ALARM_SYNC_TICK);
   }
 });
 
@@ -89,6 +104,34 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
     });
 
   return true; // keep the channel open for the async reply
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  switch (info.menuItemId) {
+    case MENU.openLibrary:
+      void openLibrary();
+      return;
+    case MENU.parkWindow:
+      void parkWithFeedback({ kind: "window" });
+      return;
+    case MENU.parkPage:
+      if (tab?.id !== undefined) void parkWithFeedback({ kind: "tabs", tabIds: [tab.id] });
+      return;
+    case MENU.parkGroup:
+      void parkWithFeedback({
+        kind: "tab-group",
+        ...(tab?.windowId === undefined ? {} : { windowId: tab.windowId }),
+      });
+      return;
+    case MENU.parkLink:
+      if (info.linkUrl) {
+        void addLink(info.linkUrl, info.selectionText)
+          .then((result) => flashBadge(result.added > 0 ? "+1" : ""))
+          .catch((error) => log("park link failed", error));
+      }
+      return;
+    default:
+  }
 });
 
 chrome.commands.onCommand.addListener((command) => {
@@ -123,6 +166,7 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 void (async () => {
-  chrome.alarms.create(ALARM_SYNC_TICK, { periodInMinutes: 1 });
+  installMenus();
+  scheduleAlarms();
   log("ready", version());
 })();

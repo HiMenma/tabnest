@@ -16,6 +16,7 @@ export default defineConfig({
         library: "pages/library.html",
         popup: "pages/popup.html",
         options: "pages/options.html",
+        import: "pages/import.html",
         sync: "pages/sync.html",
       },
     },

@@ -23,6 +23,11 @@ export interface SnapshotRequest {
   type: "snapshot";
 }
 
+/** Just the settings, for surfaces that must not pull the whole library. */
+export interface SettingsOnlyRequest {
+  type: "settings";
+}
+
 export interface ParkRequest {
   type: "park";
   scope: ParkScope;
@@ -116,6 +121,7 @@ export interface ImportRequest {
 export type RequestMessage =
   | PingRequest
   | SnapshotRequest
+  | SettingsOnlyRequest
   | ParkRequest
   | OpenRequest
   | UpdateTabRequest
@@ -133,6 +139,7 @@ export type RequestMessage =
 export interface ResponseByRequest {
   ping: PingResponse;
   snapshot: LibrarySnapshot;
+  settings: Settings;
   park: ParkResponse;
   open: OpenResponse;
   "update-tab": { ok: true };
@@ -182,6 +189,7 @@ export function isRequest(value: unknown): value is RequestMessage {
 const REQUEST_TYPES = new Set<string>([
   "ping",
   "snapshot",
+  "settings",
   "park",
   "open",
   "update-tab",

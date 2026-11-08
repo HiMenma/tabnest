@@ -1,30 +1,33 @@
 /*
- * Design tokens. One file, no framework, no utility classes — components own
- * their layout and read colour/space/type from here.
+ * Design tokens.
+ *
+ * Colours use light-dark() so the light and dark palettes are declared once and
+ * the active one follows color-scheme. An explicit preference is applied by
+ * setting data-theme on :root, which flips color-scheme.
  */
 
 :root {
   color-scheme: light dark;
 
   /* palette */
-  --tn-accent: #4f46e5;
-  --tn-accent-hover: #4338ca;
+  --tn-accent: light-dark(#4f46e5, #818cf8);
+  --tn-accent-hover: light-dark(#4338ca, #a5b4fc);
   --tn-accent-soft: color-mix(in srgb, var(--tn-accent) 12%, transparent);
-  --tn-danger: #dc2626;
-  --tn-warn: #b45309;
-  --tn-ok: #15803d;
+  --tn-danger: light-dark(#dc2626, #f87171);
+  --tn-warn: light-dark(#b45309, #fbbf24);
+  --tn-ok: light-dark(#15803d, #4ade80);
 
-  --tn-bg: #ffffff;
-  --tn-bg-sunken: #f7f7f9;
-  --tn-bg-raised: #ffffff;
-  --tn-bg-hover: #f1f1f5;
-  --tn-bg-selected: color-mix(in srgb, var(--tn-accent) 10%, transparent);
+  --tn-bg: light-dark(#ffffff, #18181b);
+  --tn-bg-sunken: light-dark(#f7f7f9, #121215);
+  --tn-bg-raised: light-dark(#ffffff, #232327);
+  --tn-bg-hover: light-dark(#f1f1f5, #27272b);
+  --tn-bg-selected: color-mix(in srgb, var(--tn-accent) 12%, transparent);
 
-  --tn-fg: #18181b;
-  --tn-fg-muted: #6b7280;
-  --tn-fg-faint: #9ca3af;
-  --tn-border: #e4e4e7;
-  --tn-border-strong: #d4d4d8;
+  --tn-fg: light-dark(#18181b, #f4f4f5);
+  --tn-fg-muted: light-dark(#6b7280, #a1a1aa);
+  --tn-fg-faint: light-dark(#9ca3af, #71717a);
+  --tn-border: light-dark(#e4e4e7, #2e2e33);
+  --tn-border-strong: light-dark(#d4d4d8, #3f3f46);
 
   /* space */
   --tn-1: 4px;
@@ -52,25 +55,17 @@
   --tn-fs-lg: 15px;
 
   --tn-row-h: 28px;
-  --tn-nav-w: 240px;
+  --tn-nav-w: 260px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --tn-accent: #818cf8;
-    --tn-accent-hover: #a5b4fc;
-    --tn-bg: #18181b;
-    --tn-bg-sunken: #121215;
-    --tn-bg-raised: #232327;
-    --tn-bg-hover: #27272b;
-    --tn-fg: #f4f4f5;
-    --tn-fg-muted: #a1a1aa;
-    --tn-fg-faint: #71717a;
-    --tn-border: #2e2e33;
-    --tn-border-strong: #3f3f46;
-    --tn-shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
-    --tn-shadow-2: 0 4px 14px rgb(0 0 0 / 45%);
-  }
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --tn-shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+  --tn-shadow-2: 0 4px 14px rgb(0 0 0 / 45%);
 }
 
 * {
@@ -104,4 +99,16 @@ a {
 :focus-visible {
   outline: 2px solid var(--tn-accent);
   outline-offset: 1px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }

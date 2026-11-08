@@ -1,8 +1,11 @@
+import { t } from "../../../i18n";
+
 interface ToolbarProps {
   query: string;
   onQuery: (query: string) => void;
   selectionCount: number;
   inTrash: boolean;
+  inArchive: boolean;
   onParkWindow: () => void;
   onParkTab: () => void;
   onNewFolder: () => void;
@@ -18,6 +21,7 @@ export function Toolbar({
   onQuery,
   selectionCount,
   inTrash,
+  inArchive,
   onParkWindow,
   onParkTab,
   onNewFolder,
@@ -32,13 +36,18 @@ export function Toolbar({
   return (
     <div className="tn-toolbar">
       <button type="button" className="tn-btn tn-btn--primary" onClick={onParkWindow}>
-        Park this window
+        {t("toolbar.parkWindow")}
       </button>
       <button type="button" className="tn-btn" onClick={onParkTab}>
-        Park current tab
+        {t("toolbar.parkTab")}
       </button>
-      <button type="button" className="tn-btn" onClick={onNewFolder} disabled={inTrash}>
-        New folder
+      <button
+        type="button"
+        className="tn-btn"
+        onClick={onNewFolder}
+        disabled={inTrash || inArchive}
+      >
+        {t("toolbar.newFolder")}
       </button>
 
       <div className="tn-toolbar-gap" />
@@ -47,17 +56,19 @@ export function Toolbar({
         className="tn-search"
         type="search"
         value={query}
-        placeholder="Search titles, URLs, notes…"
+        placeholder={t("toolbar.search")}
         onChange={(event) => onQuery(event.currentTarget.value)}
-        aria-label="Search the library"
+        aria-label={t("toolbar.search")}
       />
 
       <div className="tn-toolbar-actions">
         {hasSelection ? (
-          <span className="tn-selection-count">{selectionCount} selected</span>
+          <span className="tn-selection-count">
+            {t("toolbar.selected", { count: selectionCount })}
+          </span>
         ) : null}
         <button type="button" className="tn-btn" onClick={onOpenSelected} disabled={!hasSelection}>
-          Open
+          {t("toolbar.open")}
         </button>
         {inTrash ? (
           <>
@@ -67,10 +78,10 @@ export function Toolbar({
               onClick={onRestoreSelected}
               disabled={!hasSelection}
             >
-              Restore
+              {t("toolbar.restore")}
             </button>
             <button type="button" className="tn-btn tn-btn--danger" onClick={onEmptyTrash}>
-              Empty trash
+              {t("toolbar.emptyTrash")}
             </button>
           </>
         ) : (
@@ -81,7 +92,7 @@ export function Toolbar({
               onClick={onArchiveSelected}
               disabled={!hasSelection}
             >
-              Archive
+              {inArchive ? t("detail.unarchive") : t("toolbar.archive")}
             </button>
             <button
               type="button"
@@ -89,7 +100,7 @@ export function Toolbar({
               onClick={onDeleteSelected}
               disabled={!hasSelection}
             >
-              Trash
+              {t("toolbar.trash")}
             </button>
           </>
         )}

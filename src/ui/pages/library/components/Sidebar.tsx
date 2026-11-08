@@ -1,12 +1,14 @@
 import { type DragEvent, useState } from "react";
 import { type Id, type Node, QUICK_LIST_ID, ROOT_ID, TRASH_ID } from "../../../../data/model";
 import { actions, reportError } from "../../../data/actions";
-import { childrenOf, countTabs } from "../../../data/tree";
+import { ARCHIVE_VIEW, childrenOf, countTabs } from "../../../data/tree";
+import { t } from "../../../i18n";
 
 interface SidebarProps {
   map: Map<Id, Node>;
   selectedId: Id;
   onSelect: (id: Id) => void;
+  archivedCount: number;
 }
 
 interface RowProps {
@@ -21,13 +23,12 @@ interface RowProps {
 }
 
 function labelOf(node: Node): string {
-  if (node.kind === "group") {
-    if (node.id === QUICK_LIST_ID) return "Quick list";
-    if (node.id === TRASH_ID) return "Trash";
-    if (node.id === ROOT_ID) return "All lists";
-    return node.label ?? (node.groupType === "window" ? "Window" : "Folder");
-  }
-  return node.title;
+  if (node.kind !== "group") return node.title;
+  if (node.id === QUICK_LIST_ID) return t("nav.quickList");
+  if (node.id === TRASH_ID) return t("nav.trash");
+  if (node.id === ROOT_ID) return t("nav.allLists");
+  if (node.label) return node.label;
+  return node.groupType === "window" ? t("nav.window") : t("nav.folder");
 }
 
 function DropRow({
@@ -120,7 +121,7 @@ function DropRow({
   );
 }
 
-export function Sidebar({ map, selectedId, onSelect }: SidebarProps) {
+export function Sidebar({ map, selectedId, onSelect, archivedCount }: SidebarProps) {
   const [expanded, setExpanded] = useState<Set<Id>>(() => new Set<Id>([ROOT_ID]));
 
   const toggle = (id: Id): void => {
@@ -152,7 +153,7 @@ export function Sidebar({ map, selectedId, onSelect }: SidebarProps) {
   const trashCount = countTabs(map, TRASH_ID);
 
   return (
-    <div className="tn-sidebar" role="tree" aria-label="Collections">
+    <div className="tn-sidebar" role="tree" aria-label={t("nav.collections")}>
       <div
         role="treeitem"
         tabIndex={0}
@@ -174,7 +175,7 @@ export function Sidebar({ map, selectedId, onSelect }: SidebarProps) {
         <span className="tn-side-caret" aria-hidden="true">
           ★
         </span>
-        <span className="tn-side-label">Quick list</span>
+        <span className="tn-side-label">{t("nav.quickList")}</span>
         <span className="tn-side-count">{quickCount || ""}</span>
       </div>
 
@@ -190,11 +191,6 @@ export function Sidebar({ map, selectedId, onSelect }: SidebarProps) {
             onSelect(ROOT_ID);
           }
         }}
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-        }}
-        onDrop={(event) => onDropInto(ROOT_ID, event)}
       >
         <button
           type="button"
@@ -207,7 +203,7 @@ export function Sidebar({ map, selectedId, onSelect }: SidebarProps) {
         >
           {expanded.has(ROOT_ID) ? "▾" : "▸"}
         </button>
-        <span className="tn-side-label">All lists</span>
+        <span className="tn-side-label">{t("nav.allLists")}</span>
       </div>
 
       {expanded.has(ROOT_ID)
@@ -233,6 +229,26 @@ export function Sidebar({ map, selectedId, onSelect }: SidebarProps) {
       <div
         role="treeitem"
         tabIndex={0}
+        aria-selected={selectedId === ARCHIVE_VIEW}
+        className={`tn-side-row tn-side-row--system${selectedId === ARCHIVE_VIEW ? " tn-side-row--active" : ""}`}
+        onClick={() => onSelect(ARCHIVE_VIEW)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect(ARCHIVE_VIEW);
+          }
+        }}
+      >
+        <span className="tn-side-caret" aria-hidden="true">
+          ▣
+        </span>
+        <span className="tn-side-label">{t("nav.archive")}</span>
+        <span className="tn-side-count">{archivedCount || ""}</span>
+      </div>
+
+      <div
+        role="treeitem"
+        tabIndex={0}
         aria-selected={selectedId === TRASH_ID}
         className={`tn-side-row tn-side-row--system${selectedId === TRASH_ID ? " tn-side-row--active" : ""}`}
         onClick={() => onSelect(TRASH_ID)}
@@ -251,7 +267,7 @@ export function Sidebar({ map, selectedId, onSelect }: SidebarProps) {
         <span className="tn-side-caret" aria-hidden="true">
           🗑
         </span>
-        <span className="tn-side-label">Trash</span>
+        <span className="tn-side-label">{t("nav.trash")}</span>
         <span className="tn-side-count">{trashCount || ""}</span>
       </div>
     </div>

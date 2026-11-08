@@ -48,29 +48,31 @@ try {
   check("no update_url", !manifest.update_url);
 
   // --- pages render -------------------------------------------------------
-  for (const [path, anchor] of [
-    ["pages/library.html", "All lists"],
-    ["pages/options.html", "Options"],
-    ["pages/sync.html", "Backends"],
+  // Selectors, not copy: the UI is localised to the host's language.
+  for (const [path, selector] of [
+    ["pages/library.html", ".tn-toolbar"],
+    ["pages/options.html", ".tn-page"],
+    ["pages/import.html", ".tn-page"],
+    ["pages/sync.html", ".tn-main"],
   ]) {
     const page = await context.newPage();
     await page.goto(`${origin}/${path}`);
-    await page.waitForSelector(`text=${anchor}`, { timeout: 10000 });
-    check(`${path} renders "${anchor}"`, true);
+    await page.waitForSelector(selector, { timeout: 10000 });
+    check(`${path} renders`, true);
     await page.close();
   }
 
   const popup = await context.newPage();
   await popup.goto(`${origin}/pages/popup.html`);
-  const pill = await popup.waitForSelector(".tn-pill", { timeout: 10000 });
-  const pillText = (await pill.textContent()) ?? "";
-  check("popup reached the worker", /worker v\d/.test(pillText), pillText.trim());
+  await popup.waitForSelector(".tn-popup-actions", { timeout: 10000 });
+  const popupCount = (await popup.textContent(".tn-popup-count")) ?? "";
+  check("popup rendered its window summary", popupCount.length > 0, popupCount.trim());
   await popup.close();
 
   // --- parking round trip -------------------------------------------------
   const library = await context.newPage();
   await library.goto(`${origin}/pages/library.html`);
-  await library.waitForSelector("text=Nothing here yet", { timeout: 10000 });
+  await library.waitForSelector(".tn-list-empty", { timeout: 10000 });
 
   for (const path of ["/alpha", "/beta", "/gamma"]) {
     const page = await context.newPage();
@@ -105,7 +107,11 @@ try {
 
   // --- search -------------------------------------------------------------
   await library.fill(".tn-search", "bet");
-  await library.waitForSelector("text=Search results", { timeout: 5000 });
+  await library.waitForFunction(
+    () => document.querySelectorAll(".tn-row-item").length === 1,
+    undefined,
+    { timeout: 5000 },
+  );
   const hits = await library.locator(".tn-row-item").count();
   check("search narrows to one row", hits === 1, `saw ${hits}`);
   await library.fill(".tn-search", "");
@@ -161,7 +167,7 @@ try {
     setter?.call(input, "Bulk item 4999");
     input.dispatchEvent(new Event("input", { bubbles: true }));
     await new Promise((resolve) => setTimeout(resolve, 0));
-    while (!document.body.textContent?.includes("Search results")) {
+    while (document.querySelectorAll(".tn-row-item").length !== 1) {
       await new Promise((resolve) => setTimeout(resolve, 5));
       if (performance.now() - started > 2000) break;
     }
