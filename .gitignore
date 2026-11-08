@@ -1,6 +1,9 @@
 # build output
 dist/
 *.zip
+# packaged artifacts and their signing key never belong in the repo
+*.crx
+*.pem
 
 # deps
 node_modules/
