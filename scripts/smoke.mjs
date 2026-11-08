@@ -149,6 +149,40 @@ try {
     String(renamed.heading),
   );
 
+  // The heading is editable too, and stays in step with the sidebar.
+  await library.click(".tn-heading-trigger");
+  await library.waitForSelector(".tn-heading-input", { timeout: 5000 });
+  await library.fill(".tn-heading-input", "Renamed from the heading");
+  await library.keyboard.press("Enter");
+  await library.waitForTimeout(500);
+
+  const headingRename = await library.evaluate(async () => {
+    const snapshot = await chrome.runtime.sendMessage({ type: "snapshot" });
+    const group = snapshot.nodes.find(
+      (node) => node.kind === "group" && node.groupType === "window",
+    );
+    return {
+      label: group?.label ?? null,
+      heading: document.querySelector(".tn-heading")?.textContent?.trim(),
+      sidebar: document.querySelector(".tn-side-row--active .tn-side-label")?.textContent?.trim(),
+    };
+  });
+  check(
+    "heading rename persists",
+    headingRename.label === "Renamed from the heading",
+    String(headingRename.label),
+  );
+  check(
+    "heading shows the new name",
+    headingRename.heading === "Renamed from the heading",
+    String(headingRename.heading),
+  );
+  check(
+    "sidebar follows the heading rename",
+    headingRename.sidebar === "Renamed from the heading",
+    String(headingRename.sidebar),
+  );
+
   await library.goto(`${origin}/pages/library.html`);
   await library.waitForSelector(".tn-row-item", { timeout: 10000 });
 

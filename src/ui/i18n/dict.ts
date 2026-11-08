@@ -100,6 +100,7 @@ export const en: Dict = {
   "header.groupsOne": "1 group",
   "header.total": "{{count}} in total",
   "header.folderName": "Folder name",
+  "header.renameHint": "Click to rename",
 
   "empty.noRecords": "Nothing here yet. Park some tabs to fill it.",
   "empty.noMatches": "Nothing matches that search.",
@@ -337,6 +338,7 @@ export const zhCN: Dict = {
   "header.groupsOne": "1 个分组",
   "header.total": "共 {{count}} 条",
   "header.folderName": "文件夹名称",
+  "header.renameHint": "点击可重命名",
 
   "empty.noRecords": "这里还是空的。收纳几个标签试试。",
   "empty.noMatches": "没有匹配的条目。",

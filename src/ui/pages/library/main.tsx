@@ -18,11 +18,13 @@ import {
   childrenOf,
   countTabs,
   directTabs,
+  isRenamable,
   searchTabs,
 } from "../../data/tree";
 import { initLocale, t, tCount } from "../../i18n";
 import { applyTheme } from "../../shared/theme";
 import { Detail } from "./components/Detail";
+import { EditableHeading } from "./components/EditableHeading";
 import { List } from "./components/List";
 import { Sidebar } from "./components/Sidebar";
 import { Toolbar } from "./components/Toolbar";
@@ -216,7 +218,11 @@ function LibraryApp() {
 
       <section className="tn-library-main">
         <header className="tn-header-row">
-          <h1>{hits ? t("header.searchResults") : headingFor(map, selectedGroupId)}</h1>
+          <EditableHeading
+            label={hits ? t("header.searchResults") : headingFor(map, selectedGroupId)}
+            renamable={!hits && isRenamable(map.get(selectedGroupId))}
+            onRename={(label) => void actions.renameGroup(selectedGroupId, label)}
+          />
           <span className="tn-header-sub">
             {hits ? tCount("header.matches", "header.matchesOne", hits.length) : subtitle}
           </span>

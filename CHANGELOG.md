@@ -3,6 +3,14 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and
 versions follow semantic versioning.
 
+## [1.1.1] — 2026-11-08
+
+### Added
+
+- The list heading in the library is editable in place: click the title (or
+  press F2 on it) to rename the current list. The sidebar entry follows, and
+  system views — All lists, Quick list, Archive, Trash — keep a read-only title.
+
 ## [1.1.0] — 2026-11-08
 
 ### Added
