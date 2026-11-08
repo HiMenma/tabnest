@@ -3,6 +3,22 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and
 versions follow semantic versioning.
 
+## [1.0.1] — 2026-11-08
+
+### Fixed
+
+- Typing or pasting into the excluded-domain box (and into the detail panel's
+  title, URL and notes fields) then leaving it immediately saved the previous
+  value, because the blur handler read React state that had not been committed
+  yet. The handlers now read the control's own value.
+
+### Verified
+
+- Exercised in ego lite (Chromium 156) against the unpacked build: parking a
+  selection, group naming and order, search, quick list, detail editing, archive,
+  trash and restore, opening a record back into a tab, options persistence,
+  excluded-domain enforcement, popup, text import and JSON export.
+
 ## [1.0.0] — 2026-11-08
 
 First complete release.

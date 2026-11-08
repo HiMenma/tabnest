@@ -44,7 +44,11 @@ export function Detail({
         <input
           value={title}
           onChange={(event) => setTitle(event.currentTarget.value)}
-          onBlur={() => title !== tab.title && onSaveTitle(tab.id, title)}
+          onBlur={(event) => {
+            const next = event.currentTarget.value;
+            if (next !== tab.title) onSaveTitle(tab.id, next);
+            else setTitle(next);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter") event.currentTarget.blur();
           }}
@@ -57,7 +61,11 @@ export function Detail({
           value={url}
           spellCheck={false}
           onChange={(event) => setUrl(event.currentTarget.value)}
-          onBlur={() => url !== tab.url && onSaveUrl(tab.id, url)}
+          onBlur={(event) => {
+            const next = event.currentTarget.value;
+            if (next !== tab.url) onSaveUrl(tab.id, next);
+            else setUrl(next);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter") event.currentTarget.blur();
           }}
@@ -72,7 +80,11 @@ export function Detail({
           value={notes}
           placeholder={t("detail.notesPlaceholder")}
           onChange={(event) => setNotes(event.currentTarget.value)}
-          onBlur={() => notes !== (tab.notes ?? "") && onSaveNotes(tab.id, notes)}
+          onBlur={(event) => {
+            const next = event.currentTarget.value;
+            if (next !== (tab.notes ?? "")) onSaveNotes(tab.id, next);
+            else setNotes(next);
+          }}
         />
       </label>
 

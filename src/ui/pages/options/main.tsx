@@ -159,8 +159,10 @@ function OptionsApp() {
             spellCheck={false}
             value={excluded}
             onChange={(event) => setExcluded(event.currentTarget.value)}
-            onBlur={() => {
-              const domains = excluded
+            onBlur={(event) => {
+              // Read from the control: a paste immediately followed by blur
+              // arrives before React has committed the state update.
+              const domains = event.currentTarget.value
                 .split("\n")
                 .map((line) => line.trim())
                 .filter(Boolean);
