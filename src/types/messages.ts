@@ -8,7 +8,7 @@
 
 import type { ParkScope } from "../background/capture";
 import type { BackendOptions } from "../background/sync/backend/types";
-import type { SyncStatus } from "../background/sync/engine";
+import type { SyncArchive, SyncStatus } from "../background/sync/engine";
 import type { Id, LibrarySnapshot, Settings } from "../data/model";
 
 export interface PingRequest {
@@ -140,6 +140,15 @@ export interface SyncDisableRequest {
   type: "sync-disable";
 }
 
+export interface SyncExportRequest {
+  type: "sync-export";
+}
+
+export interface SyncImportRequest {
+  type: "sync-import";
+  archive: SyncArchive;
+}
+
 export type RequestMessage =
   | PingRequest
   | SnapshotRequest
@@ -160,7 +169,9 @@ export type RequestMessage =
   | SyncGetRequest
   | SyncConfigureRequest
   | SyncNowRequest
-  | SyncDisableRequest;
+  | SyncDisableRequest
+  | SyncExportRequest
+  | SyncImportRequest;
 
 export interface ResponseByRequest {
   ping: PingResponse;
@@ -183,6 +194,8 @@ export interface ResponseByRequest {
   "sync-configure": SyncStatus;
   "sync-now": SyncStatus;
   "sync-disable": SyncStatus;
+  "sync-export": SyncArchive;
+  "sync-import": { imported: number };
 }
 
 export type ResponseFor<T extends RequestMessage> = ResponseByRequest[T["type"]];
@@ -233,6 +246,8 @@ const REQUEST_TYPES = new Set<string>([
   "sync-configure",
   "sync-now",
   "sync-disable",
+  "sync-export",
+  "sync-import",
 ]);
 
 export function isKnownRequest(value: unknown): value is RequestMessage {

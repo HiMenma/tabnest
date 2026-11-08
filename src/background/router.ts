@@ -148,6 +148,12 @@ export async function handle(request: RequestMessage): Promise<unknown> {
     case "sync-disable":
       return syncEngine.disable();
 
+    case "sync-export":
+      return syncEngine.exportArchive();
+
+    case "sync-import":
+      return syncEngine.importArchive(request.archive);
+
     case "repair": {
       const report = await repair();
       const repaired =

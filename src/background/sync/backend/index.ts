@@ -1,5 +1,8 @@
 import { createChromeSyncStore } from "./chrome-sync";
+import { createGistStore } from "./gist";
+import { createHttpStore } from "./http";
 import type { BackendDescriptor, BackendOptions, ObjectStore } from "./types";
+import { createWebdavStore } from "./webdav";
 
 /**
  * Registered backends. M4 ships chrome.storage.sync; M5 adds the network ones
@@ -12,6 +15,27 @@ export const BACKENDS: BackendDescriptor[] = [
     needsConfig: false,
     encryption: "off",
     create: async () => createChromeSyncStore(),
+  },
+  {
+    id: "http",
+    labelKey: "sync.backend.http",
+    needsConfig: true,
+    encryption: "passphrase",
+    create: async (options) => createHttpStore(options),
+  },
+  {
+    id: "webdav",
+    labelKey: "sync.backend.webdav",
+    needsConfig: true,
+    encryption: "passphrase",
+    create: async (options) => createWebdavStore(options),
+  },
+  {
+    id: "gist",
+    labelKey: "sync.backend.gist",
+    needsConfig: true,
+    encryption: "passphrase",
+    create: async (options) => createGistStore(options),
   },
 ];
 

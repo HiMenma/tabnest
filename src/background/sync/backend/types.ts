@@ -45,6 +45,8 @@ export interface BackendOptions {
   auth?: "bearer" | "basic";
   /** Gist id for the gist backend. */
   gistId?: string;
+  /** Override the backend's assumed object size ceiling, in bytes. */
+  maxBytes?: number;
 }
 
 export interface BackendDescriptor {

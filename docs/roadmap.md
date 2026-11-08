@@ -16,54 +16,54 @@ items pass, not when the code "mostly works".
 **Gate:** `pnpm build` produces a `dist/` that loads unpacked, the popup shows
 `worker v0.1.0`, and `dist/` contains no third-party endpoint.
 
-## M1 — Data layer and capture
+## M1 — Data layer and capture ✅
 
-- [ ] `idb.ts` schema v1 with migration hook
-- [ ] `model.ts` invariants + `repo.ts` mutations in single transactions
-- [ ] `url-rules.ts` + canonicalisation and dedupe tests
-- [ ] Eight parking actions, pinned/excluded/duplicate/tab-group rules
-- [ ] Quarantine for oversized URLs
+- [x] `idb.ts` schema v1 with migration hook
+- [x] `model.ts` invariants + `repo.ts` mutations in single transactions
+- [x] `url-rules.ts` + canonicalisation and dedupe tests
+- [x] Eight parking actions, pinned/excluded/duplicate/tab-group rules
+- [x] Quarantine for oversized URLs
 
 **Gate:** park 50 tabs → records and tab-strip order match; parking twice does
 not duplicate; a crash between commit and close leaves no half state.
 
-## M2 — Library UI
+## M2 — Library UI ✅
 
-- [ ] Tree with folders, window groups, tab groups, quick list, trash
-- [ ] Virtual list, search, multi-select, drag and drop, inline edit
-- [ ] Open strategies: same tab, new tab, new window; restore as group
-- [ ] Notes and ratings
+- [x] Tree with folders, window groups, tab groups, quick list, trash
+- [x] Virtual list, search, multi-select, drag and drop, inline edit
+- [x] Open strategies: same tab, new tab, new window; restore as group
+- [x] Notes and ratings
 
 **Gate:** 5000 records render under 300 ms; search under 50 ms; keyboard-only
 navigation works.
 
-## M3 — Surrounding features
+## M3 — Surrounding features ✅
 
-- [ ] Popup chooser, options page, import/export (text, JSON, bookmarks, reading list)
-- [ ] Keyboard commands, context menus, omnibox
-- [ ] i18n: en + zh-CN
-- [ ] Archive and trash lifecycle, retention sweep
+- [x] Popup chooser, options page, import/export (text, JSON, bookmarks, reading list)
+- [x] Keyboard commands, context menus, omnibox
+- [x] i18n: en + zh-CN
+- [x] Archive and trash lifecycle, retention sweep
 
 **Gate:** import of a 500-entry export produces the expected structure; every
 command in the manifest does something.
 
-## M4 — Sync engine and the default backend
+## M4 — Sync engine and the default backend ✅
 
-- [ ] Journal, codec, crypto, quota guard, device identity
-- [ ] `chrome-sync` backend with batching and backoff
-- [ ] Conflict rules from `docs/sync-design.md`, with the 8-case test matrix
-- [ ] Status surface, diagnostics export, badge
-- [ ] Two-instance end-to-end test against the in-memory backend
+- [x] Journal, codec, crypto, quota guard, device identity
+- [x] `chrome-sync` backend with batching and backoff
+- [x] Conflict rules from `docs/sync-design.md`, with the 8-case test matrix
+- [x] Status surface, diagnostics export, badge
+- [x] Two-instance end-to-end test against the in-memory backend
 
 **Gate:** A adds/edits/moves/deletes → B converges within 5 s; overflow enters
 `paused:too-large` with local data intact.
 
-## M5 — External backends
+## M5 — External backends ✅
 
-- [ ] `http`, `webdav`, `gist`, `file` behind the same `ObjectStore`
-- [ ] Configuration UI with runtime host-permission requests
-- [ ] `server/worker.js` reference implementation + docs
-- [ ] Passphrase flow, recovery code, "forgot passphrase" expectations
+- [x] `http`, `webdav`, `gist`, `file` behind the same `ObjectStore`
+- [x] Configuration UI with runtime host-permission requests
+- [x] `server/worker.js` reference implementation + docs
+- [x] Passphrase flow, recovery code, "forgot passphrase" expectations
 
 **Gate:** a real WebDAV directory and a deployed worker both round-trip a
 two-device sync; wrong passphrase fails loudly and never corrupts local data.

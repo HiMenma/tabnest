@@ -79,6 +79,14 @@ const CONFIG_KEY = "syncConfig";
 const STATE_KEY = "syncState";
 const MAX_OWN_CHUNKS = 32;
 
+export interface SyncArchive {
+  format: "tabnest-sync-archive";
+  version: 1;
+  createdAt: number;
+  storeId: string;
+  entries: Record<string, string>;
+}
+
 export class SyncConflictFreeError extends Error {}
 
 function emptyState(): SyncState {
@@ -252,6 +260,45 @@ export class SyncEngine {
       return this.status();
     }
     return this.syncNow();
+  }
+
+  /** Reads the whole store into one portable file. Works for every backend. */
+  async exportArchive(): Promise<SyncArchive> {
+    const config = this.config;
+    const store = this.store;
+    if (!config || !store) throw new Error("sync is not configured");
+    const prefix = `${config.storeId}/`;
+    const keys = await store.list(prefix);
+    const entries: Record<string, string> = {};
+    for (const key of keys) {
+      const bytes = await store.get(key);
+      if (bytes) entries[key.slice(prefix.length)] = toBase64(bytes);
+    }
+    return {
+      format: "tabnest-sync-archive",
+      version: 1,
+      createdAt: Date.now(),
+      storeId: config.storeId,
+      entries,
+    };
+  }
+
+  /** Writes an archive back into the configured store, then pulls it in. */
+  async importArchive(archive: SyncArchive): Promise<{ imported: number }> {
+    const config = this.config;
+    const store = this.store;
+    if (!config || !store) throw new Error("sync is not configured");
+    if (archive.format !== "tabnest-sync-archive") throw new Error("not a TabNest archive");
+    if (archive.storeId !== config.storeId) {
+      throw new Error("this archive belongs to a different store; connect to that store id first");
+    }
+    let imported = 0;
+    for (const [relativePath, base64] of Object.entries(archive.entries)) {
+      await store.put(`${config.storeId}/${relativePath}`, fromBase64(base64));
+      imported += 1;
+    }
+    await this.syncNow();
+    return { imported };
   }
 
   async disable(): Promise<SyncStatus> {
