@@ -23,6 +23,7 @@ import {
 } from "../data/repo";
 import type { BroadcastMessage, RequestMessage, ResponseFor } from "../types/messages";
 import { describeOutcome, park } from "./capture";
+import { lastMenuReport, scheduleMenuRebuild } from "./menus";
 import { openNodes } from "./open";
 import { syncEngine } from "./sync/engine";
 
@@ -54,6 +55,8 @@ export async function handle(request: RequestMessage): Promise<unknown> {
     case "park": {
       const outcome = await park(request.scope);
       changed(outcome.groupIds);
+      // A new list changes the "recent lists" submenu.
+      scheduleMenuRebuild();
       return { ...outcome, summary: describeOutcome(outcome) };
     }
 
@@ -122,6 +125,7 @@ export async function handle(request: RequestMessage): Promise<unknown> {
     case "patch-settings": {
       const settings = await patchSettings(request.patch);
       changed([]);
+      scheduleMenuRebuild();
       return settings;
     }
 
@@ -130,6 +134,9 @@ export async function handle(request: RequestMessage): Promise<unknown> {
       changed([result.groupId]);
       return result;
     }
+
+    case "menu-report":
+      return lastMenuReport();
 
     case "sync-get":
       return syncEngine.status();

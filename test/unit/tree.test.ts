@@ -6,6 +6,7 @@ import {
   countTabs,
   directTabs,
   formatDate,
+  isRenamable,
   searchTabs,
   subtreeTabs,
 } from "../../src/ui/data/tree";
@@ -126,5 +127,24 @@ describe("formatDate", () => {
     const old = Date.UTC(2020, 0, 2, 12);
     expect(formatDate(old)).toMatch(/2020|Jan/);
     expect(formatDate(0)).toBe("");
+  });
+});
+
+describe("isRenamable", () => {
+  it("allows the lists a user creates", () => {
+    for (const groupType of ["folder", "window", "tabGroup"] as const) {
+      expect(isRenamable({ ...group("x", []), groupType, parents: ["root"] })).toBe(true);
+    }
+  });
+
+  it("refuses the system containers", () => {
+    for (const id of ["root", "quickList", "trash"]) {
+      expect(isRenamable(group(id, []))).toBe(false);
+    }
+  });
+
+  it("refuses tabs and missing nodes", () => {
+    expect(isRenamable(tab("t1", "A"))).toBe(false);
+    expect(isRenamable(undefined)).toBe(false);
   });
 });

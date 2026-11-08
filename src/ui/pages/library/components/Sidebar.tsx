@@ -1,7 +1,7 @@
-import { type DragEvent, useState } from "react";
+import { type DragEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { type Id, type Node, QUICK_LIST_ID, ROOT_ID, TRASH_ID } from "../../../../data/model";
 import { actions, reportError } from "../../../data/actions";
-import { ARCHIVE_VIEW, childrenOf, countTabs } from "../../../data/tree";
+import { ARCHIVE_VIEW, childrenOf, countTabs, isRenamable } from "../../../data/tree";
 import { t } from "../../../i18n";
 
 interface SidebarProps {
@@ -19,6 +19,7 @@ interface RowProps {
   onSelect: (id: Id) => void;
   expanded: Set<Id>;
   toggle: (id: Id) => void;
+  onRename: (id: Id, label: string) => void;
   onDropInto: (groupId: Id, event: DragEvent) => void;
 }
 
@@ -39,13 +40,32 @@ function DropRow({
   onSelect,
   expanded,
   toggle,
+  onRename,
   onDropInto,
 }: RowProps) {
   const [over, setOver] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
   const isGroup = node.kind === "group";
   const count = isGroup ? countTabs(map, node.id) : 0;
   const canExpand = isGroup && node.groupType !== "trash" && childrenOf(map, node.id).length > 0;
   const isOpen = expanded.has(node.id);
+  const renamable = isRenamable(node);
+  const label = labelOf(node);
+
+  useEffect(() => {
+    if (!editing) return;
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [editing]);
+
+  const commit = (value: string): void => {
+    setEditing(false);
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === label) return;
+    onRename(node.id, trimmed);
+  };
 
   return (
     <>
@@ -63,10 +83,19 @@ function DropRow({
           .join(" ")}
         style={{ paddingInlineStart: 8 + depth * 12 }}
         onClick={() => onSelect(node.id)}
+        onDoubleClick={(event) => {
+          if (!renamable) return;
+          event.preventDefault();
+          setEditing(true);
+        }}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             onSelect(node.id);
+          }
+          if (event.key === "F2" && renamable) {
+            event.preventDefault();
+            setEditing(true);
           }
           if (event.key === "ArrowRight" && canExpand && !isOpen) toggle(node.id);
           if (event.key === "ArrowLeft" && canExpand && isOpen) toggle(node.id);
@@ -82,7 +111,7 @@ function DropRow({
           setOver(false);
           onDropInto(node.id, event);
         }}
-        title={labelOf(node)}
+        title={editing ? undefined : label}
       >
         <button
           type="button"
@@ -96,7 +125,26 @@ function DropRow({
         >
           {isOpen ? "▾" : "▸"}
         </button>
-        <span className="tn-side-label">{labelOf(node)}</span>
+
+        {editing ? (
+          <input
+            ref={inputRef}
+            className="tn-side-edit"
+            defaultValue={label}
+            aria-label={label}
+            onClick={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+              if (event.key === "Enter") commit(event.currentTarget.value);
+              if (event.key === "Escape") setEditing(false);
+            }}
+            onBlur={(event) => commit(event.currentTarget.value)}
+          />
+        ) : (
+          <span className="tn-side-label">{label}</span>
+        )}
+
         <span className="tn-side-count">{count || ""}</span>
       </div>
 
@@ -113,6 +161,7 @@ function DropRow({
                 onSelect={onSelect}
                 expanded={expanded}
                 toggle={toggle}
+                onRename={onRename}
                 onDropInto={onDropInto}
               />
             ))
@@ -131,6 +180,10 @@ export function Sidebar({ map, selectedId, onSelect, archivedCount }: SidebarPro
       else next.add(id);
       return next;
     });
+  };
+
+  const onRename = (id: Id, label: string): void => {
+    void actions.renameGroup(id, label);
   };
 
   const onDropInto = (groupId: Id, event: DragEvent): void => {
@@ -152,59 +205,58 @@ export function Sidebar({ map, selectedId, onSelect, archivedCount }: SidebarPro
   const quickCount = countTabs(map, QUICK_LIST_ID);
   const trashCount = countTabs(map, TRASH_ID);
 
-  return (
-    <div className="tn-sidebar" role="tree" aria-label={t("nav.collections")}>
-      <div
-        role="treeitem"
-        tabIndex={0}
-        aria-selected={selectedId === QUICK_LIST_ID}
-        className={`tn-side-row tn-side-row--system${selectedId === QUICK_LIST_ID ? " tn-side-row--active" : ""}`}
-        onClick={() => onSelect(QUICK_LIST_ID)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onSelect(QUICK_LIST_ID);
-          }
-        }}
-        onDragOver={(event) => {
+  const systemRow = (
+    id: Id,
+    glyph: string,
+    label: string,
+    count: number,
+    expandable = false,
+  ): ReactElement => (
+    <div
+      role="treeitem"
+      tabIndex={0}
+      aria-selected={selectedId === id}
+      className={`tn-side-row tn-side-row--system${selectedId === id ? " tn-side-row--active" : ""}`}
+      onClick={() => onSelect(id)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-        }}
-        onDrop={(event) => onDropInto(QUICK_LIST_ID, event)}
-      >
-        <span className="tn-side-caret" aria-hidden="true">
-          ★
-        </span>
-        <span className="tn-side-label">{t("nav.quickList")}</span>
-        <span className="tn-side-count">{quickCount || ""}</span>
-      </div>
-
-      <div
-        role="treeitem"
-        tabIndex={0}
-        aria-selected={selectedId === ROOT_ID}
-        className={`tn-side-row tn-side-row--system${selectedId === ROOT_ID ? " tn-side-row--active" : ""}`}
-        onClick={() => onSelect(ROOT_ID)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onSelect(ROOT_ID);
-          }
-        }}
-      >
+          onSelect(id);
+        }
+      }}
+      onDragOver={(event) => {
+        if (id === ARCHIVE_VIEW) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
+      onDrop={(event) => onDropInto(id, event)}
+    >
+      {expandable ? (
         <button
           type="button"
           className="tn-side-caret"
           aria-label={expanded.has(ROOT_ID) ? "Collapse" : "Expand"}
           onClick={(event) => {
             event.stopPropagation();
-            toggle(ROOT_ID);
+            toggle(id);
           }}
         >
-          {expanded.has(ROOT_ID) ? "▾" : "▸"}
+          {expanded.has(id) ? "▾" : "▸"}
         </button>
-        <span className="tn-side-label">{t("nav.allLists")}</span>
-      </div>
+      ) : (
+        <span className="tn-side-caret" aria-hidden="true">
+          {glyph}
+        </span>
+      )}
+      <span className="tn-side-label">{label}</span>
+      <span className="tn-side-count">{count || ""}</span>
+    </div>
+  );
+
+  return (
+    <div className="tn-sidebar" role="tree" aria-label={t("nav.collections")}>
+      {systemRow(QUICK_LIST_ID, "★", t("nav.quickList"), quickCount)}
+      {systemRow(ROOT_ID, "▾", t("nav.allLists"), 0, true)}
 
       {expanded.has(ROOT_ID)
         ? rootChildren
@@ -219,6 +271,7 @@ export function Sidebar({ map, selectedId, onSelect, archivedCount }: SidebarPro
                 onSelect={onSelect}
                 expanded={expanded}
                 toggle={toggle}
+                onRename={onRename}
                 onDropInto={onDropInto}
               />
             ))
@@ -226,50 +279,8 @@ export function Sidebar({ map, selectedId, onSelect, archivedCount }: SidebarPro
 
       <div className="tn-side-spacer" />
 
-      <div
-        role="treeitem"
-        tabIndex={0}
-        aria-selected={selectedId === ARCHIVE_VIEW}
-        className={`tn-side-row tn-side-row--system${selectedId === ARCHIVE_VIEW ? " tn-side-row--active" : ""}`}
-        onClick={() => onSelect(ARCHIVE_VIEW)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onSelect(ARCHIVE_VIEW);
-          }
-        }}
-      >
-        <span className="tn-side-caret" aria-hidden="true">
-          ▣
-        </span>
-        <span className="tn-side-label">{t("nav.archive")}</span>
-        <span className="tn-side-count">{archivedCount || ""}</span>
-      </div>
-
-      <div
-        role="treeitem"
-        tabIndex={0}
-        aria-selected={selectedId === TRASH_ID}
-        className={`tn-side-row tn-side-row--system${selectedId === TRASH_ID ? " tn-side-row--active" : ""}`}
-        onClick={() => onSelect(TRASH_ID)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onSelect(TRASH_ID);
-          }
-        }}
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-        }}
-        onDrop={(event) => onDropInto(TRASH_ID, event)}
-      >
-        <span className="tn-side-caret" aria-hidden="true">
-          🗑
-        </span>
-        <span className="tn-side-label">{t("nav.trash")}</span>
-        <span className="tn-side-count">{trashCount || ""}</span>
-      </div>
+      {systemRow(ARCHIVE_VIEW, "▣", t("nav.archive"), archivedCount)}
+      {systemRow(TRASH_ID, "🗑", t("nav.trash"), trashCount)}
     </div>
   );
 }

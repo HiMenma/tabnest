@@ -105,6 +105,53 @@ try {
   const order = await library.locator(".tn-row-title").allTextContents();
   check("tab-strip order is preserved", order.join(",") === "Alpha,Beta,Gamma", order.join(","));
 
+  // --- deep link + sidebar rename ----------------------------------------
+  const groupId = await library.evaluate(async () => {
+    const snapshot = await chrome.runtime.sendMessage({ type: "snapshot" });
+    const group = snapshot.nodes.find(
+      (node) => node.kind === "group" && node.groupType === "window",
+    );
+    return group?.id ?? null;
+  });
+  check("a parked group exists to link to", Boolean(groupId), String(groupId));
+
+  await library.goto(`${origin}/pages/library.html?group=${groupId}`);
+  await library.waitForSelector(".tn-row-item", { timeout: 10000 });
+  const linkedHeading = (await library.textContent(".tn-header-row h1"))?.trim();
+  check("?group= opens that list", linkedHeading === "Alpha", String(linkedHeading));
+
+  await library.dblclick(".tn-side-row >> text=Alpha");
+  await library.waitForSelector(".tn-side-edit", { timeout: 5000 });
+  await library.fill(".tn-side-edit", "Renamed from the sidebar");
+  await library.keyboard.press("Enter");
+  await library.waitForTimeout(500);
+
+  const renamed = await library.evaluate(async () => {
+    const snapshot = await chrome.runtime.sendMessage({ type: "snapshot" });
+    const group = snapshot.nodes.find(
+      (node) => node.kind === "group" && node.groupType === "window",
+    );
+    return {
+      label: group?.label ?? null,
+      sidebar: document.querySelector(".tn-side-row--active .tn-side-label")?.textContent?.trim(),
+      heading: document.querySelector(".tn-header-row h1")?.textContent?.trim(),
+    };
+  });
+  check("rename persists", renamed.label === "Renamed from the sidebar", String(renamed.label));
+  check(
+    "rename shows in the sidebar",
+    renamed.sidebar === "Renamed from the sidebar",
+    String(renamed.sidebar),
+  );
+  check(
+    "rename shows in the heading",
+    renamed.heading === "Renamed from the sidebar",
+    String(renamed.heading),
+  );
+
+  await library.goto(`${origin}/pages/library.html`);
+  await library.waitForSelector(".tn-row-item", { timeout: 10000 });
+
   // --- search -------------------------------------------------------------
   await library.fill(".tn-search", "bet");
   await library.waitForFunction(

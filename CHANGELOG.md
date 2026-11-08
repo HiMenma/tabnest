@@ -3,6 +3,30 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and
 versions follow semantic versioning.
 
+## [1.1.0] — 2026-11-08
+
+### Added
+
+- **Action menu** on the toolbar icon and on the page: every parking scope
+  (window, tab group, highlighted selection, current tab, all but this, left,
+  right, all windows), a per-site "never park this host" toggle that names the
+  active host and shows its state, a submenu of the six most recent lists, and
+  Help.
+- The selection item lights up when two or more tabs are highlighted, which is
+  Chrome's only signal for a tab-strip selection.
+- `library.html?group=<id>` deep link, used by the recent-lists submenu.
+- Help page: quick start, what can be parked, the shortcuts read live from
+  `chrome.commands`, where the data lives.
+- Sidebar list names are editable in place: double-click the name or press F2,
+  Enter commits, Escape cancels.
+- `menu-report` message: what the last menu rebuild installed, and any per-item
+  errors, so a support question does not need a screenshot.
+
+### Fixed
+
+- The trash appeared in "recent lists" because it is stored as a folder; system
+  containers are excluded. Found while verifying the menu in ego lite.
+
 ## [1.0.1] — 2026-11-08
 
 ### Fixed

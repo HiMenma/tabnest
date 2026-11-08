@@ -17,6 +17,7 @@ export default defineConfig({
         popup: "pages/popup.html",
         options: "pages/options.html",
         import: "pages/import.html",
+        help: "pages/help.html",
         sync: "pages/sync.html",
       },
     },

@@ -1,7 +1,22 @@
-import type { Id, LibrarySnapshot, Node, TabItem } from "../../data/model";
+import {
+  type Id,
+  type LibrarySnapshot,
+  type Node,
+  SYSTEM_GROUP_IDS,
+  type TabItem,
+} from "../../data/model";
 
 /** A view id, not a record: the sidebar's Archive entry. */
 export const ARCHIVE_VIEW = "archive";
+
+/** Groups whose name the user may edit: containers they created, not system ones. */
+export function isRenamable(node: Node | undefined): boolean {
+  if (node?.kind !== "group") return false;
+  if (SYSTEM_GROUP_IDS.includes(node.id)) return false;
+  return (
+    node.groupType === "folder" || node.groupType === "window" || node.groupType === "tabGroup"
+  );
+}
 
 /** Ordered children of a group, skipping ids that no longer exist. */
 export function childrenOf(map: Map<Id, Node>, id: Id): Node[] {

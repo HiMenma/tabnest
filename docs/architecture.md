@@ -141,6 +141,28 @@ Used for dedupe and for the content-derived id. Order of operations:
 The rule set is data (`src/data/url-rules.ts`) so it can be tested and extended
 without touching logic.
 
+## The action menu
+
+`menu-spec.ts` turns a snapshot of "what the user is looking at" into a list of
+menu items — a pure function, so the enablement rules are unit-tested without a
+browser:
+
+```ts
+buildMenuSpec({ activeHost, excluded, inTabGroup, highlightedCount, recentGroups });
+```
+
+Chrome installs menus statically, so `menus.ts` rebuilds them (debounced 150 ms)
+whenever the active tab, its tab group, the highlight set, the window focus, the
+exclusion list or the newest lists can have changed. Item ids are prefixed `tn-`
+and `tn-recent:<id>` carries a destination. Click handling lives in `actions.ts`
+and shares one scope table with the keyboard commands.
+
+Two details worth remembering:
+
+- a tab-group item is enabled only when the active tab has a `groupId`;
+- "selected tabs" reads `tabs.query({ highlighted: true })`, because a tab-strip
+  multi-selection has no dedicated API.
+
 ## Messaging
 
 One typed channel, defined in `src/types/messages.ts`:

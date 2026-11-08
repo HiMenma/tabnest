@@ -1,6 +1,6 @@
 {
   "name": "tabnest",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Tab manager for Chrome: park tabs into lists, folders and groups, with pluggable encrypted sync.",

@@ -446,3 +446,43 @@
   flex-wrap: wrap;
   margin-top: var(--tn-2);
 }
+
+/* help page -------------------------------------------------------------- */
+
+.tn-help-steps,
+.tn-help-list {
+  margin: 0;
+  padding-inline-start: 20px;
+  color: var(--tn-fg-muted);
+  font-size: var(--tn-fs-md);
+}
+
+.tn-help-steps li,
+.tn-help-list li {
+  margin: 4px 0;
+}
+
+.tn-help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tn-fs-sm);
+  margin-bottom: var(--tn-3);
+}
+
+.tn-help-table td {
+  padding: 4px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--tn-border) 60%, transparent);
+}
+
+.tn-help-table td:last-child {
+  text-align: end;
+  width: 160px;
+}
+
+.tn-help-table code {
+  font-family: var(--tn-mono);
+  background: var(--tn-bg-sunken);
+  border: 1px solid var(--tn-border);
+  border-radius: var(--tn-r-sm);
+  padding: 1px 6px;
+}

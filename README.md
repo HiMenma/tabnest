@@ -9,10 +9,11 @@ choice of sync backend** and end-to-end encryption.
 ## What it does
 
 - **Park** a whole window, a tab group, the current tab, everything except it,
-  everything left or right of it, all windows, or a hand-picked selection. The
-  tabs close; the records stay.
+  everything left or right of it, all windows, or the tabs you highlighted — from
+  the toolbar menu, the popup or a shortcut. The tabs close; the records stay.
 - **Organise** with folders, window groups and nested Chrome tab groups, plus a
-  quick list, an archive and a trash.
+  quick list, an archive and a trash. Rename any list in the sidebar with a
+  double-click or F2.
 - **Find** by typing: titles, URLs, hosts and notes, over a virtualised list that
   stays smooth at thousands of records.
 - **Annotate** with notes and star ratings; rename records inline.

@@ -1,18 +1,15 @@
 /**
  * Service worker entry point.
  *
- * Responsibilities, in order of importance:
- *   1. route page requests to the repository (single writer),
- *   2. turn commands, context-menu clicks and shortcuts into parking operations,
- *   3. keep the alarms that maintenance and sync run on.
+ * A list of subscriptions and nothing else: routing, the action menu, keyboard
+ * commands, alarms. Behaviour lives in actions.ts, menus.ts and router.ts.
  */
 
 import { isKnownRequest, type RequestMessage } from "../types/messages";
-import type { ParkScope } from "./capture";
-import { park } from "./capture";
+import { handleCommand, handleMenuClick } from "./actions";
 import { sweep } from "./maintenance";
-import { installMenus, MENU } from "./menus";
-import { addLink, broadcast, handle } from "./router";
+import { installMenus, scheduleMenuRebuild } from "./menus";
+import { broadcast, handle } from "./router";
 import { syncEngine } from "./sync/engine";
 
 const ALARM_SYNC_TICK = "sync-tick";
@@ -24,44 +21,6 @@ function version(): string {
 
 function log(...args: unknown[]): void {
   console.debug("[tabnest:sw]", ...args);
-}
-
-async function openLibrary(): Promise<void> {
-  const url = chrome.runtime.getURL("pages/library.html");
-  const existing = await chrome.tabs.query({ url });
-  const first = existing[0];
-  if (first?.id !== undefined) {
-    await chrome.tabs.update(first.id, { active: true });
-    if (first.windowId !== undefined) {
-      await chrome.windows.update(first.windowId, { focused: true });
-    }
-    return;
-  }
-  await chrome.tabs.create({ url });
-}
-
-async function flashBadge(text: string): Promise<void> {
-  await chrome.action.setBadgeText({ text });
-  if (text) {
-    await chrome.action.setBadgeBackgroundColor({ color: "#4f46e5" });
-    setTimeout(() => {
-      void chrome.action.setBadgeText({ text: "" });
-    }, 4000);
-  }
-}
-
-async function parkWithFeedback(scope: ParkScope): Promise<void> {
-  try {
-    const outcome = await park(scope);
-    if (outcome.refusedDueToPinned) {
-      await flashBadge("!");
-      return;
-    }
-    await flashBadge(outcome.added > 0 ? String(outcome.added) : "");
-  } catch (error) {
-    log("park failed", error);
-    await flashBadge("!");
-  }
 }
 
 function scheduleAlarms(): void {
@@ -108,62 +67,23 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  switch (info.menuItemId) {
-    case MENU.openLibrary:
-      void openLibrary();
-      return;
-    case MENU.parkWindow:
-      void parkWithFeedback({ kind: "window" });
-      return;
-    case MENU.parkPage:
-      if (tab?.id !== undefined) void parkWithFeedback({ kind: "tabs", tabIds: [tab.id] });
-      return;
-    case MENU.parkGroup:
-      void parkWithFeedback({
-        kind: "tab-group",
-        ...(tab?.windowId === undefined ? {} : { windowId: tab.windowId }),
-      });
-      return;
-    case MENU.parkLink:
-      if (info.linkUrl) {
-        void addLink(info.linkUrl, info.selectionText)
-          .then((result) => flashBadge(result.added > 0 ? "+1" : ""))
-          .catch((error) => log("park link failed", error));
-      }
-      return;
-    default:
-  }
+  void handleMenuClick(info, tab).catch((error) => log("menu action failed", error));
 });
 
 chrome.commands.onCommand.addListener((command) => {
-  switch (command) {
-    case "display-library":
-      void openLibrary();
-      return;
-    case "park-current-tab":
-      void parkWithFeedback({ kind: "current-tab" });
-      return;
-    case "park-window":
-      void parkWithFeedback({ kind: "window" });
-      return;
-    case "park-tab-group":
-      void parkWithFeedback({ kind: "tab-group" });
-      return;
-    case "park-all-except-current":
-      void parkWithFeedback({ kind: "all-except-current" });
-      return;
-    case "park-left":
-      void parkWithFeedback({ kind: "left" });
-      return;
-    case "park-right":
-      void parkWithFeedback({ kind: "right" });
-      return;
-    case "park-all-windows":
-      void parkWithFeedback({ kind: "all-windows" });
-      return;
-    default:
-      log("unknown command", command);
-  }
+  void handleCommand(command).catch((error) => log("command failed", error));
+});
+
+// The menu's shape depends on the focused tab, its tab group, the highlight set
+// and the newest lists, so it is rebuilt whenever one of those can have changed.
+const menuRelevant = (): void => scheduleMenuRebuild();
+
+chrome.tabs.onActivated.addListener(menuRelevant);
+chrome.tabs.onHighlighted.addListener(menuRelevant);
+chrome.tabs.onRemoved.addListener(menuRelevant);
+chrome.windows.onFocusChanged.addListener(menuRelevant);
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
+  if (changeInfo.url !== undefined || changeInfo.groupId !== undefined) scheduleMenuRebuild();
 });
 
 syncEngine.onStatus((status) => {

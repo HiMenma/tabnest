@@ -10,6 +10,7 @@ import {
   TRASH_ID,
 } from "../../../data/model";
 import { actions } from "../../data/actions";
+import { parseGroupParam } from "../../data/deep-link";
 import { startBroadcastBridge, useLibrary } from "../../data/store";
 import {
   ARCHIVE_VIEW,
@@ -79,6 +80,15 @@ function LibraryApp() {
     void refresh();
     return startBroadcastBridge();
   }, [refresh]);
+
+  // `library.html?group=<id>` from the menu's recent-lists submenu.
+  const deepLinkApplied = useRef(false);
+  useEffect(() => {
+    if (deepLinkApplied.current || !snapshot) return;
+    deepLinkApplied.current = true;
+    const id = parseGroupParam(window.location.search);
+    if (id && map.get(id)?.kind === "group") selectGroup(id);
+  }, [snapshot, map, selectGroup]);
 
   useEffect(() => {
     applyTheme(snapshot?.settings.theme);
@@ -241,6 +251,15 @@ function LibraryApp() {
               }
             >
               {t("options.title")}
+            </button>
+            <button
+              type="button"
+              className="tn-link"
+              onClick={() =>
+                void chrome.tabs.create({ url: chrome.runtime.getURL("pages/help.html") })
+              }
+            >
+              {t("menu.help")}
             </button>
           </nav>
         </header>

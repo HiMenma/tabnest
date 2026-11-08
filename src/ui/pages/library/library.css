@@ -84,6 +84,17 @@
   text-overflow: ellipsis;
 }
 
+.tn-side-edit {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 0 4px;
+  border: 1px solid var(--tn-accent);
+  border-radius: var(--tn-r-sm);
+  background: var(--tn-bg);
+  color: var(--tn-fg);
+}
+
 .tn-side-count {
   color: var(--tn-fg-faint);
   font-size: var(--tn-fs-sm);

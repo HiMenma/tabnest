@@ -210,6 +210,9 @@ function OptionsApp() {
           <button type="button" className="tn-btn" onClick={() => openPage("pages/sync.html")}>
             {t("sync.title")}
           </button>
+          <button type="button" className="tn-btn" onClick={() => openPage("pages/help.html")}>
+            {t("menu.help")}
+          </button>
         </div>
       </section>
 

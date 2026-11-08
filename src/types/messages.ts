@@ -124,6 +124,11 @@ export interface SyncGetRequest {
   type: "sync-get";
 }
 
+/** Diagnostics: what the last action-menu rebuild produced. */
+export interface MenuReportRequest {
+  type: "menu-report";
+}
+
 export interface SyncConfigureRequest {
   type: "sync-configure";
   backendId: string;
@@ -166,6 +171,7 @@ export type RequestMessage =
   | SettingsRequest
   | RepairRequest
   | ImportRequest
+  | MenuReportRequest
   | SyncGetRequest
   | SyncConfigureRequest
   | SyncNowRequest
@@ -190,6 +196,7 @@ export interface ResponseByRequest {
   "patch-settings": Settings;
   repair: { repaired: boolean };
   import: { added: number; skipped: number; groupId: Id };
+  "menu-report": { installedAt: number; items: number; errors: string[] };
   "sync-get": SyncStatus;
   "sync-configure": SyncStatus;
   "sync-now": SyncStatus;
@@ -242,6 +249,7 @@ const REQUEST_TYPES = new Set<string>([
   "patch-settings",
   "repair",
   "import",
+  "menu-report",
   "sync-get",
   "sync-configure",
   "sync-now",
