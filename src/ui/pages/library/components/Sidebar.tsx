@@ -20,6 +20,7 @@ interface RowProps {
   expanded: Set<Id>;
   toggle: (id: Id) => void;
   onRename: (id: Id, label: string) => void;
+  onDelete: (id: Id) => void;
   onDropInto: (groupId: Id, event: DragEvent) => void;
 }
 
@@ -41,6 +42,7 @@ function DropRow({
   expanded,
   toggle,
   onRename,
+  onDelete,
   onDropInto,
 }: RowProps) {
   const [over, setOver] = useState(false);
@@ -97,6 +99,10 @@ function DropRow({
             event.preventDefault();
             setEditing(true);
           }
+          if (event.key === "Delete" && renamable && !editing) {
+            event.preventDefault();
+            onDelete(node.id);
+          }
           if (event.key === "ArrowRight" && canExpand && !isOpen) toggle(node.id);
           if (event.key === "ArrowLeft" && canExpand && isOpen) toggle(node.id);
         }}
@@ -145,6 +151,20 @@ function DropRow({
           <span className="tn-side-label">{label}</span>
         )}
 
+        {renamable && !editing ? (
+          <button
+            type="button"
+            className="tn-side-delete"
+            title={t("nav.deleteList")}
+            aria-label={`${t("nav.deleteList")}: ${label}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(node.id);
+            }}
+          >
+            🗑
+          </button>
+        ) : null}
         <span className="tn-side-count">{count || ""}</span>
       </div>
 
@@ -162,6 +182,7 @@ function DropRow({
                 expanded={expanded}
                 toggle={toggle}
                 onRename={onRename}
+                onDelete={onDelete}
                 onDropInto={onDropInto}
               />
             ))
@@ -184,6 +205,10 @@ export function Sidebar({ map, selectedId, onSelect, archivedCount }: SidebarPro
 
   const onRename = (id: Id, label: string): void => {
     void actions.renameGroup(id, label);
+  };
+
+  const onDelete = (id: Id): void => {
+    void actions.remove([id], "trash");
   };
 
   const onDropInto = (groupId: Id, event: DragEvent): void => {
@@ -272,6 +297,7 @@ export function Sidebar({ map, selectedId, onSelect, archivedCount }: SidebarPro
                 expanded={expanded}
                 toggle={toggle}
                 onRename={onRename}
+                onDelete={onDelete}
                 onDropInto={onDropInto}
               />
             ))

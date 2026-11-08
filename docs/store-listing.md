@@ -49,7 +49,7 @@ you saved.
   everything except it — from the toolbar menu, the popup or a shortcut
 - A per-site "never park this host" switch right in the menu
 - Left, right, grouped, pinned and excluded-domain rules
-- Folders, window groups and nested tab groups, renameable from the heading or the sidebar
+- Folders, window groups and nested tab groups, renameable and deletable from the heading or the sidebar
 - Notes, ratings, quick list, archive, and a 90-day-safe trash
 - Search across titles, URLs, hosts and notes
 - Import from a URL list, JSON, bookmarks, or your reading list

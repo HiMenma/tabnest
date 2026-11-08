@@ -222,6 +222,10 @@ function LibraryApp() {
             label={hits ? t("header.searchResults") : headingFor(map, selectedGroupId)}
             renamable={!hits && isRenamable(map.get(selectedGroupId))}
             onRename={(label) => void actions.renameGroup(selectedGroupId, label)}
+            onDelete={() => {
+              void actions.remove([selectedGroupId], "trash");
+              selectGroup(ROOT_ID);
+            }}
           />
           <span className="tn-header-sub">
             {hits ? tCount("header.matches", "header.matchesOne", hits.length) : subtitle}

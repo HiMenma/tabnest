@@ -70,6 +70,7 @@ export const en: Dict = {
   "nav.folder": "Folder",
   "nav.window": "Window",
   "nav.collections": "Collections",
+  "nav.deleteList": "Move to trash",
   "list.records": "Records",
   "row.archived": "Archived",
 
@@ -308,6 +309,7 @@ export const zhCN: Dict = {
   "nav.folder": "文件夹",
   "nav.window": "窗口",
   "nav.collections": "分类",
+  "nav.deleteList": "移到回收站",
   "list.records": "记录",
   "row.archived": "已归档",
 

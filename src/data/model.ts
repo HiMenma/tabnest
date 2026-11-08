@@ -28,6 +28,8 @@ export interface BaseNode {
   updatedAt: number;
   /** Groups this node belongs to. May be empty for orphaned records. */
   parents: Id[];
+  /** Set while the record sits in the trash, so restoring puts it back. */
+  trashedFrom?: Id;
 }
 
 export interface TabItem extends BaseNode {

@@ -385,3 +385,67 @@ describe("journal", () => {
     expect(entries).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe("trash origin", () => {
+  it("remembers the list a moved record came from", async () => {
+    const groupId = await parkUrls(["https://example.com/a"], "origin list");
+    const nodes = byId(await listNodes());
+    const tabId = group(nodes, groupId).children[0] as string;
+
+    await deleteNodes([tabId], "trash");
+
+    const trashed = tab(byId(await listNodes()), tabId);
+    expect(trashed.parents).toEqual([TRASH_ID]);
+    expect(trashed.trashedFrom).toBe(groupId);
+  });
+
+  it("restores it into that list", async () => {
+    const groupId = await parkUrls(["https://example.com/a"], "origin list");
+    const nodes = byId(await listNodes());
+    const tabId = group(nodes, groupId).children[0] as string;
+    await deleteNodes([tabId], "trash");
+
+    await restoreNodes([tabId]);
+
+    const after = byId(await listNodes());
+    expect(tab(after, tabId).parents).toEqual([groupId]);
+    expect(tab(after, tabId).trashedFrom).toBeUndefined();
+    expect(group(after, groupId).children).toContain(tabId);
+  });
+
+  it("restores a whole list to where it was", async () => {
+    const outer = await createGroup("outer");
+    const inner = await createGroup("inner", outer);
+    await deleteNodes([inner], "trash");
+
+    await restoreNodes([inner]);
+
+    const after = byId(await listNodes());
+    expect(group(after, inner).parents).toEqual([outer]);
+    expect(group(after, outer).children).toContain(inner);
+  });
+
+  it("falls back to the root when the original list is gone", async () => {
+    const groupId = await parkUrls(["https://example.com/a"], "doomed");
+    const nodes = byId(await listNodes());
+    const tabId = group(nodes, groupId).children[0] as string;
+    await deleteNodes([tabId], "trash");
+    await deleteNodes([groupId], "purge");
+
+    await restoreNodes([tabId]);
+
+    expect(tab(byId(await listNodes()), tabId).parents).toEqual([ROOT_ID]);
+  });
+
+  it("still honours an explicit destination", async () => {
+    const source = await parkUrls(["https://example.com/a"], "source");
+    const target = await createGroup("target");
+    const nodes = byId(await listNodes());
+    const tabId = group(nodes, source).children[0] as string;
+    await deleteNodes([tabId], "trash");
+
+    await restoreNodes([tabId], target);
+
+    expect(tab(byId(await listNodes()), tabId).parents).toEqual([target]);
+  });
+});

@@ -95,6 +95,44 @@
   color: var(--tn-fg);
 }
 
+.tn-side-delete {
+  border: 0;
+  background: none;
+  padding: 0 2px;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--tn-fg-faint);
+  opacity: 0;
+  flex: 0 0 auto;
+}
+
+:is(.tn-side-row:hover, .tn-side-row:focus-within, .tn-side-row--active) .tn-side-delete {
+  opacity: 1;
+}
+
+.tn-side-delete:hover {
+  color: var(--tn-danger);
+}
+
+.tn-heading-delete {
+  border: 0;
+  background: none;
+  padding: 0 4px;
+  margin-inline-start: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--tn-fg-faint);
+  opacity: 0.55;
+  vertical-align: middle;
+}
+
+.tn-heading-delete:hover {
+  opacity: 1;
+  color: var(--tn-danger);
+}
+
 .tn-side-count {
   color: var(--tn-fg-faint);
   font-size: var(--tn-fs-sm);

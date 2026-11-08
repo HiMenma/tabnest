@@ -514,6 +514,10 @@ export async function deleteNodes(ids: readonly Id[], mode: "trash" | "purge"): 
           writeNode(stores, trash);
           pushChange(stores, { op: "reorder", id: TRASH_ID, children: trash.children, at: now });
         }
+        // Remember the list it came from; the trash is a holding area, not a
+        // destination, so a restore has to know where to put it back.
+        const origin = node.parents.find((parentId) => parentId !== TRASH_ID);
+        if (origin !== undefined) node.trashedFrom = origin;
         node.parents = [TRASH_ID];
         node.updatedAt = now;
         writeNode(stores, node);
@@ -552,14 +556,25 @@ export async function deleteNodes(ids: readonly Id[], mode: "trash" | "purge"): 
   });
 }
 
-export async function restoreNodes(
-  ids: readonly Id[],
-  targetParentId: Id = ROOT_ID,
-): Promise<number> {
+export async function restoreNodes(ids: readonly Id[], targetParentId?: Id): Promise<number> {
   const now = Date.now();
   return tx(["node", "change"], "readwrite", async (stores) => {
-    const target = await readNode(stores, targetParentId);
-    if (target?.kind !== "group") throw new Error(`target ${targetParentId} is not a group`);
+    let explicit: Group | undefined;
+    if (targetParentId !== undefined) {
+      const requested = await readNode(stores, targetParentId);
+      if (requested?.kind !== "group") throw new Error(`target ${targetParentId} is not a group`);
+      explicit = requested;
+    }
+
+    // Mutated destinations are tracked by identity: re-reading them mid-loop
+    // would hand back a copy without the child we just appended.
+    const destinations = new Map<Id, Group>();
+    const track = (group: Group): Group => {
+      const existing = destinations.get(group.id);
+      if (existing) return existing;
+      destinations.set(group.id, group);
+      return group;
+    };
 
     let restored = 0;
     for (const id of ids) {
@@ -567,25 +582,44 @@ export async function restoreNodes(
       if (!node) continue;
       if (!node.parents.includes(TRASH_ID)) continue;
 
+      // An explicit destination wins; otherwise the list it came from; otherwise root.
+      const remembered =
+        node.trashedFrom === undefined ? undefined : await readNode(stores, node.trashedFrom);
+      const fallback = await readNode(stores, ROOT_ID);
+      const chosen =
+        explicit ??
+        (remembered?.kind === "group" ? remembered : undefined) ??
+        (fallback?.kind === "group" ? fallback : undefined);
+      if (!chosen) continue;
+      const destination = track(chosen);
+
       const trash = await readNode(stores, TRASH_ID);
-      if (trash && trash.kind === "group") {
+      if (trash?.kind === "group") {
         trash.children = trash.children.filter((childId) => childId !== id);
         touchGroup(trash, now);
         writeNode(stores, trash);
         pushChange(stores, { op: "reorder", id: TRASH_ID, children: trash.children, at: now });
       }
 
-      node.parents = [targetParentId];
+      node.parents = [destination.id];
+      delete node.trashedFrom;
       node.updatedAt = now;
       writeNode(stores, node);
-      if (!target.children.includes(id)) target.children.push(id);
+      if (!destination.children.includes(id)) destination.children.push(id);
       pushChange(stores, { op: "upsert", node });
       restored += 1;
     }
 
-    touchGroup(target, now);
-    writeNode(stores, target);
-    pushChange(stores, { op: "reorder", id: targetParentId, children: target.children, at: now });
+    for (const destination of destinations.values()) {
+      touchGroup(destination, now);
+      writeNode(stores, destination);
+      pushChange(stores, {
+        op: "reorder",
+        id: destination.id,
+        children: destination.children,
+        at: now,
+      });
+    }
     return restored;
   });
 }

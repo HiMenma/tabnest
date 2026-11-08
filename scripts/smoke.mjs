@@ -117,7 +117,7 @@ try {
 
   await library.goto(`${origin}/pages/library.html?group=${groupId}`);
   await library.waitForSelector(".tn-row-item", { timeout: 10000 });
-  const linkedHeading = (await library.textContent(".tn-header-row h1"))?.trim();
+  const linkedHeading = (await library.textContent(".tn-heading-trigger"))?.trim();
   check("?group= opens that list", linkedHeading === "Alpha", String(linkedHeading));
 
   await library.dblclick(".tn-side-row >> text=Alpha");
@@ -134,7 +134,7 @@ try {
     return {
       label: group?.label ?? null,
       sidebar: document.querySelector(".tn-side-row--active .tn-side-label")?.textContent?.trim(),
-      heading: document.querySelector(".tn-header-row h1")?.textContent?.trim(),
+      heading: document.querySelector(".tn-heading-trigger")?.textContent?.trim(),
     };
   });
   check("rename persists", renamed.label === "Renamed from the sidebar", String(renamed.label));
@@ -163,7 +163,7 @@ try {
     );
     return {
       label: group?.label ?? null,
-      heading: document.querySelector(".tn-heading")?.textContent?.trim(),
+      heading: document.querySelector(".tn-heading-trigger")?.textContent?.trim(),
       sidebar: document.querySelector(".tn-side-row--active .tn-side-label")?.textContent?.trim(),
     };
   });
@@ -181,6 +181,55 @@ try {
     "sidebar follows the heading rename",
     headingRename.sidebar === "Renamed from the heading",
     String(headingRename.sidebar),
+  );
+
+  // Deleting a list from the sidebar, and restoring it back where it was.
+  const listed = await library.evaluate(async () => {
+    const snapshot = await chrome.runtime.sendMessage({ type: "snapshot" });
+    return snapshot.nodes.find((node) => node.kind === "group" && node.groupType === "window").id;
+  });
+  await library.click(".tn-side-row--active .tn-side-delete");
+  await library.waitForTimeout(600);
+
+  const afterDelete = await library.evaluate(async (id) => {
+    const snapshot = await chrome.runtime.sendMessage({ type: "snapshot" });
+    const trash = snapshot.nodes.find((node) => node.id === "trash");
+    const group = snapshot.nodes.find((node) => node.id === id);
+    return {
+      inTrash: trash.children.includes(id),
+      trashedFrom: group?.trashedFrom ?? null,
+      stillInRoot: snapshot.nodes.find((node) => node.id === "root").children.includes(id),
+    };
+  }, listed);
+  check("sidebar delete moves the list to the trash", afterDelete.inTrash === true);
+  check("it is no longer at the root", afterDelete.stillInRoot === false);
+  check(
+    "it remembers where it came from",
+    afterDelete.trashedFrom === "root",
+    String(afterDelete.trashedFrom),
+  );
+
+  await library.evaluate(
+    (id) => chrome.runtime.sendMessage({ type: "restore", ids: [id] }),
+    listed,
+  );
+  await library.waitForTimeout(600);
+  const afterRestore = await library.evaluate(async (id) => {
+    const snapshot = await chrome.runtime.sendMessage({ type: "snapshot" });
+    const group = snapshot.nodes.find((node) => node.id === id);
+    const root = snapshot.nodes.find((node) => node.id === "root");
+    return {
+      inRoot: root.children.includes(id),
+      trashedFrom: group?.trashedFrom ?? null,
+      label: group?.label ?? null,
+    };
+  }, listed);
+  check("restore puts the list back at the root", afterRestore.inRoot === true);
+  check("restore clears the origin marker", afterRestore.trashedFrom === null);
+  check(
+    "restore keeps the name",
+    afterRestore.label === "Renamed from the heading",
+    String(afterRestore.label),
   );
 
   await library.goto(`${origin}/pages/library.html`);

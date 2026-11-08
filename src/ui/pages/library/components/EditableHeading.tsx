@@ -6,13 +6,15 @@ interface EditableHeadingProps {
   /** False for the system views and for search results. */
   renamable: boolean;
   onRename: (next: string) => void;
+  /** Moves the whole list to the trash; hidden when `renamable` is false. */
+  onDelete: () => void;
 }
 
 /**
  * The list title. Renders as plain text unless the current view is a list the
  * user owns, in which case clicking it (or F2) turns it into an input.
  */
-export function EditableHeading({ label, renamable, onRename }: EditableHeadingProps) {
+export function EditableHeading({ label, renamable, onRename, onDelete }: EditableHeadingProps) {
   const [editing, setEditing] = useState(false);
   // A rename from elsewhere (the sidebar) must not leave a stale editor open.
   // Adjusted during render rather than in an effect: React's documented way to
@@ -37,6 +39,18 @@ export function EditableHeading({ label, renamable, onRename }: EditableHeadingP
     onRename(trimmed);
   };
 
+  const trashButton = renamable ? (
+    <button
+      type="button"
+      className="tn-heading-delete"
+      title={t("nav.deleteList")}
+      aria-label={`${t("nav.deleteList")}: ${label}`}
+      onClick={onDelete}
+    >
+      🗑
+    </button>
+  ) : null;
+
   if (editing) {
     return (
       <h1 className="tn-heading">
@@ -51,6 +65,7 @@ export function EditableHeading({ label, renamable, onRename }: EditableHeadingP
           }}
           onBlur={(event) => commit(event.currentTarget.value)}
         />
+        {trashButton}
       </h1>
     );
   }
@@ -75,6 +90,7 @@ export function EditableHeading({ label, renamable, onRename }: EditableHeadingP
       ) : (
         label
       )}
+      {trashButton}
     </h1>
   );
 }

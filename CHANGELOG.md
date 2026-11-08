@@ -3,6 +3,22 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and
 versions follow semantic versioning.
 
+## [1.2.0] — 2026-11-08
+
+### Added
+
+- Deleting a list: a trash button appears on hover in the sidebar and next to
+  the list heading, and the Delete key works on a focused sidebar row. Both put
+  the list and everything inside it in the trash, where it can be restored.
+- The trash now remembers where a record came from (`trashedFrom`), so restoring
+  returns it to its own list instead of dumping it at the root. An explicit
+  destination still wins; a deleted origin falls back to the root.
+
+### Fixed
+
+- Restoring several records into the same list could drop the last one, because
+  the destination was re-read mid-loop and written back from a stale copy.
+
 ## [1.1.1] — 2026-11-08
 
 ### Added
