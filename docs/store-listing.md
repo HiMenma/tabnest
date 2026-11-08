@@ -83,7 +83,8 @@ In `docs/screenshots/`:
 | `options-en-light.png` | behaviour and capture rules    |
 | `sync-en-light.png`    | backend selection and status   |
 
-Regenerate with `pnpm build && pnpm shots`.
+Regenerate with `pnpm build && pnpm shots`. The script seeds its own sample data,
+so no real browsing session is photographed; keep it that way.
 
 ## Category and audience
 

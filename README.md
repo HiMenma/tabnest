@@ -1,10 +1,18 @@
 # TabNest
 
+[![CI](https://github.com/HiMenma/tabnest/actions/workflows/ci.yml/badge.svg)](https://github.com/HiMenma/tabnest/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/HiMenma/tabnest)](https://github.com/HiMenma/tabnest/releases/latest)
+[![Licence: MIT](https://img.shields.io/github/license/HiMenma/tabnest)](LICENSE)
+
 **English** · [简体中文](README.zh-CN.md)
 
 A tab manager for Chrome: park your open tabs into lists, organise the lists into
 folders and groups, find anything by typing, and restore it later — with **your
 choice of sync backend** and end-to-end encryption.
+
+Download `tabnest-<version>.zip` from the
+[latest release](https://github.com/HiMenma/tabnest/releases/latest) and load it
+unpacked, or [build it from source](#install).
 
 ![The library, light theme](docs/screenshots/library-en-light.png)
 
@@ -37,14 +45,10 @@ the current tab, everything except it, tabs to the left, tabs to the right, all
 windows — reachable from the toolbar menu, the popup, a right-click, or a
 keyboard command. The tabs close; the records stay.
 
-![The action menu](docs/screenshots/menu-page-zh-checked.png)
-
 **Organising.** Folders, window groups and nested Chrome tab groups, plus a quick
 list, an archive and a trash. Rename a list from its heading or its sidebar entry
 (click the name, or F2). Delete one from either place and it goes to the trash
 with its contents; restoring puts it back where it came from.
-
-![Renaming a list](docs/screenshots/rename-heading-zh.png)
 
 **Finding.** Search across titles, URLs, hosts and notes, over a virtualised list
 that stays responsive with thousands of records. Multi-select, drag and drop,
@@ -67,6 +71,8 @@ your live shortcuts; light and dark themes; English and Chinese.
 | `http`                  | any endpoint implementing seven routes          | yours      | on                            |
 | `gist`                  | a GitHub token                                  | 1 MB/file  | on                            |
 
+![Sync settings: backend, encryption and store id](docs/screenshots/sync-en-light.png)
+
 `chrome.storage.sync` holds about 100 KB — roughly 1500–2500 tabs. Past that the
 engine pauses and tells you why; it never truncates silently. For bigger
 libraries, point it at WebDAV or your own endpoint.
@@ -86,16 +92,24 @@ The protocol, the conflict rules and the quota guard are in
 [docs/sync-design.md](docs/sync-design.md); the endpoint contract, with curl
 examples and a Cloudflare Worker, is in [docs/backends.md](docs/backends.md).
 
-## Install (unpacked)
+## Install
+
+### From a release
+
+Download `tabnest-<version>.zip` from the
+[latest release](https://github.com/HiMenma/tabnest/releases/latest), unzip it,
+then open `chrome://extensions`, enable Developer mode, choose **Load unpacked**
+and pick the unzipped folder. Chrome 120 or newer.
+
+### From source
 
 ```bash
 pnpm install
 pnpm build          # -> dist/
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and
-pick `dist/`. If you change the code, click the reload button on the extension
-card.
+Load `dist/` the same way. If you change the code, click the reload button on the
+extension card.
 
 ## Working on it
 
@@ -104,7 +118,7 @@ card.
 | `pnpm dev`       | rebuild on change (reload the extension to pick it up)                                        |
 | `pnpm typecheck` | `tsc --noEmit`                                                                                |
 | `pnpm lint`      | Biome, formatting and lint in one pass                                                        |
-| `pnpm test`      | 174 unit tests: data layer, sync codec, crypto, conflict matrix…                              |
+| `pnpm test`      | 178 unit tests: data layer, sync codec, crypto, conflict matrix…                              |
 | `pnpm smoke`     | loads `dist/` in Chromium: parking, rename, delete, 5 000-record scale, `chrome.storage.sync` |
 | `pnpm e2e:sync`  | two Chromium profiles syncing through the reference server                                    |
 | `pnpm a11y`      | axe-core over every surface; zero violations is the bar                                       |
@@ -152,6 +166,17 @@ More in [docs/architecture.md](docs/architecture.md).
 
 No analytics, no account, no remote code. [docs/privacy.md](docs/privacy.md)
 describes every byte that leaves the machine.
+
+## Screenshots
+
+The captures come from `pnpm shots`, which seeds sample data — no real browsing
+session is photographed.
+
+| Dark theme                                                                    | Settings                                                              |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| ![The library in dark mode](docs/screenshots/library-en-dark.png)             | ![Behaviour and capture rules](docs/screenshots/options-en-light.png) |
+| **Import and export**                                                         | **The Chinese interface**                                             |
+| ![Import a URL list, JSON or bookmarks](docs/screenshots/import-en-light.png) | ![The library in Chinese](docs/screenshots/library-zh-light.png)      |
 
 ## Documentation
 

@@ -27,6 +27,8 @@ Everything here is checkable with a command, so it stays true.
 - [x] Icons come from Chrome's local `_favicon` API; no icon service is contacted.
 - [x] Privacy policy text lives in `docs/privacy-policy.md` and matches the code.
 - [x] Sync payloads are encrypted for every external backend.
+- [x] Screenshots come from `pnpm shots` and its sample data; a real browsing
+  session is never photographed.
 
 ## Accessibility
 
@@ -44,7 +46,7 @@ Everything here is checkable with a command, so it stays true.
 
 ## Tests
 
-- [x] `pnpm test` — unit suite, 142 cases.
+- [x] `pnpm test` — unit suite, 178 cases.
 - [x] `pnpm smoke` — real Chromium, parking round trip, 5 000-record scale,
   chrome.storage.sync backend.
 - [x] `pnpm e2e:sync` — two Chromium profiles, one server, encrypted replication.
@@ -60,7 +62,8 @@ Everything here is checkable with a command, so it stays true.
 
 - [x] Semantic version in `package.json`; the manifest reads it.
 - [x] `CHANGELOG.md` describes what changed.
-- [ ] Tag the release commit.
+- [x] Tag the release commit.
+- [x] A GitHub release carries the packaged zip (`pnpm zip`).
 
 ## Known limitations, disclosed
 

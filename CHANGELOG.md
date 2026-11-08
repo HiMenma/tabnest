@@ -3,6 +3,26 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and
 versions follow semantic versioning.
 
+## [1.2.1] — 2026-11-08
+
+### Changed
+
+- The sync page states the `chrome.storage.sync` precondition in the UI, above
+  the quota hint: replication happens only while the browser profile is signed in
+  to a Google account with sync on, and a signed-out profile looks identical from
+  inside the extension.
+- Three strings that were hard-coded in English now go through the catalogue: the
+  details panel's accessible name, the quick-list toggle's tooltip, and the store
+  id placeholder and hint.
+- Both READMEs: the two screenshots taken from a real browsing session are gone,
+  the remaining ones are scripted captures over sample data, and installing from
+  a release archive is documented next to the source build.
+
+### Fixed
+
+- The documentation claimed 174 unit tests (142 in the review checklist); the
+  suite has 178.
+
 ## [1.2.0] — 2026-11-08
 
 ### Added

@@ -1,8 +1,14 @@
 # TabNest
 
+[![CI](https://github.com/HiMenma/tabnest/actions/workflows/ci.yml/badge.svg)](https://github.com/HiMenma/tabnest/actions/workflows/ci.yml)
+[![最新版本](https://img.shields.io/github/v/release/HiMenma/tabnest)](https://github.com/HiMenma/tabnest/releases/latest)
+[![许可：MIT](https://img.shields.io/github/license/HiMenma/tabnest)](LICENSE)
+
 [English](README.md) · **简体中文**
 
 一个 Chrome 标签页管理器：把开着的标签收纳成列表，用文件夹和分组整理，靠搜索找回来，之后再恢复——**同步后端由你选**，并支持端到端加密。
+
+从[最新 Release](https://github.com/HiMenma/tabnest/releases/latest)下载 `tabnest-<version>.zip` 直接加载，或[从源码构建](#安装)。
 
 ![标签库，浅色主题](docs/screenshots/library-zh-light.png)
 
@@ -23,11 +29,7 @@
 
 **收纳。** 八种范围——当前窗口、当前标签组、你高选的标签页、仅当前标签、除当前外、左侧、右侧、所有窗口——可以从工具栏菜单、弹窗、右键或快捷键触发。标签关闭，记录留下。
 
-![工具栏菜单](docs/screenshots/menu-page-zh-checked.png)
-
 **整理。** 文件夹、窗口组、嵌套的 Chrome 标签组，外加快速列表、归档与回收站。列表名可以在标题或侧栏上改（点名字，或按 F2）；两处都能删除，删掉的列表连同内容进回收站，恢复时回到原来的位置。
-
-![从标题改名](docs/screenshots/rename-heading-zh.png)
 
 **查找。** 搜索标题、网址、主机名和笔记；虚拟滚动的列表在几千条记录下依然跟手。支持多选、拖拽、就地编辑、笔记和星级评分。
 
@@ -44,20 +46,28 @@
 | `http`                | 任意实现七条路由的端点                 | 取决于你     | 开启                 |
 | `gist`                | 一个 GitHub 令牌                       | 单文件 1 MB  | 开启                 |
 
+![同步设置：后端、加密方式与存储 id](docs/screenshots/sync-en-light.png)
+
 `chrome.storage.sync` 只有约 100 KB，大致相当于 1500–2500 个标签。超出时引擎会暂停并说明原因，**绝不静默截断**。库更大就指向 WebDAV 或自建端点。
 
 **它还需要浏览器已登录账号。** `chrome.storage.sync` 是 Chrome 同步的扩展数据通道，不是网盘目录：只有在浏览器登录了 Google 账号且开启同步时才会复制到别的设备。未登录时，Chrome 官方文档的原话是这个存储区「行为类似 `storage.local`」——写入照样成功，数据留在本机配置目录里，一个字节都不会上传。这种失败是静默的：API 两种情况都返回成功，而扩展若不申请读取邮箱地址就无法查询同步状态。**唯一的证明是第二台设备能看到数据。** 磁盘位置与完整前提见 [docs/backends.md](docs/backends.md#the-chrome-sync-backend)。
 
 协议、冲突规则与配额守卫见 [docs/sync-design.md](docs/sync-design.md)；端点契约、curl 示例和 Cloudflare Worker 见 [docs/backends.md](docs/backends.md)。
 
-## 安装（未打包）
+## 安装
+
+### 从 Release 安装
+
+从[最新 Release](https://github.com/HiMenma/tabnest/releases/latest)下载 `tabnest-<version>.zip`，解压后打开 `chrome://extensions`，开启开发者模式，点「加载未打包的扩展程序」，选择解压出来的文件夹。需要 Chrome 120 或更高版本。
+
+### 从源码构建
 
 ```bash
 pnpm install
 pnpm build          # -> dist/
 ```
 
-打开 `chrome://extensions`，开启开发者模式，点「加载未打包的扩展程序」，选 `dist/`。改了代码后，点扩展卡片上的刷新按钮即可。
+用同样的方式加载 `dist/`。改了代码后，点扩展卡片上的刷新按钮即可。
 
 ## 开发
 
@@ -66,7 +76,7 @@ pnpm build          # -> dist/
 | `pnpm dev`       | 改动后自动重建（需手动刷新扩展）                                                 |
 | `pnpm typecheck` | `tsc --noEmit`                                                                   |
 | `pnpm lint`      | Biome，格式与静态检查一次过                                                      |
-| `pnpm test`      | 174 条单测：数据层、同步编码、加密、冲突矩阵……                                   |
+| `pnpm test`      | 178 条单测：数据层、同步编码、加密、冲突矩阵……                                   |
 | `pnpm smoke`     | 在 Chromium 里加载 `dist/`：收纳、改名、删除、5000 条规模、`chrome.storage.sync` |
 | `pnpm e2e:sync`  | 两个 Chromium 配置经参考服务器同步                                               |
 | `pnpm a11y`      | axe-core 扫全部界面，零违规是底线                                                |
@@ -109,6 +119,16 @@ test/             单测（vitest）与端到端（playwright）
 | `https://*/*`、`http://*/*`             | **可选**，你填入同步端点时才申请               |
 
 没有统计、没有账号、没有远程代码。离开本机的每一个字节都写在 [docs/privacy.md](docs/privacy.md) 里。
+
+## 截图
+
+截图由 `pnpm shots` 生成，数据来自脚本里的样例——不会拍到真实的浏览会话。
+
+| 深色主题                                                           | 设置                                                       |
+| ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| ![深色主题下的标签库](docs/screenshots/library-en-dark.png)        | ![行为与收录规则](docs/screenshots/options-en-light.png)   |
+| **导入与导出**                                                     | **英文界面**                                               |
+| ![导入网址列表、JSON 或书签](docs/screenshots/import-en-light.png) | ![英文界面的标签库](docs/screenshots/library-en-light.png) |
 
 ## 文档
 
