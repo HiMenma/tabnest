@@ -1,0 +1,25 @@
+# build output
+dist/
+*.zip
+
+# deps
+node_modules/
+.pnpm-store/
+
+# tooling
+.vite/
+.vitest/
+playwright-report/
+test-results/
+coverage/
+
+# os / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# local scratch
+*.local
+.env
+.env.*

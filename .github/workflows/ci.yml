@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate icons
+        run: pnpm icons
+
+      - name: Lint and format
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Build output must not reference third-party endpoints
+        run: |
+          if grep -RIn "one-tab\.com" dist/; then
+            echo "::error::dist contains a third-party endpoint"
+            exit 1
+          fi
+          if grep -RIn "eval(\|new Function" src/; then
+            echo "::error::dynamic code evaluation found in src/"
+            exit 1
+          fi
+
+      - name: Permission set must match the reviewed allowlist
+        run: node scripts/check-permissions.mjs
+
+      - name: Package
+        run: pnpm zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tabnest-zip
+          path: tabnest-*.zip
+          if-no-files-found: error

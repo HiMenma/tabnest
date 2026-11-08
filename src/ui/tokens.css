@@ -1,0 +1,107 @@
+/*
+ * Design tokens. One file, no framework, no utility classes — components own
+ * their layout and read colour/space/type from here.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* palette */
+  --tn-accent: #4f46e5;
+  --tn-accent-hover: #4338ca;
+  --tn-accent-soft: color-mix(in srgb, var(--tn-accent) 12%, transparent);
+  --tn-danger: #dc2626;
+  --tn-warn: #b45309;
+  --tn-ok: #15803d;
+
+  --tn-bg: #ffffff;
+  --tn-bg-sunken: #f7f7f9;
+  --tn-bg-raised: #ffffff;
+  --tn-bg-hover: #f1f1f5;
+  --tn-bg-selected: color-mix(in srgb, var(--tn-accent) 10%, transparent);
+
+  --tn-fg: #18181b;
+  --tn-fg-muted: #6b7280;
+  --tn-fg-faint: #9ca3af;
+  --tn-border: #e4e4e7;
+  --tn-border-strong: #d4d4d8;
+
+  /* space */
+  --tn-1: 4px;
+  --tn-2: 8px;
+  --tn-3: 12px;
+  --tn-4: 16px;
+  --tn-5: 24px;
+  --tn-6: 32px;
+
+  /* radius + elevation */
+  --tn-r-sm: 4px;
+  --tn-r-md: 8px;
+  --tn-r-lg: 12px;
+  --tn-shadow-1: 0 1px 2px rgb(0 0 0 / 6%), 0 1px 3px rgb(0 0 0 / 4%);
+  --tn-shadow-2: 0 4px 12px rgb(0 0 0 / 10%), 0 2px 4px rgb(0 0 0 / 6%);
+
+  /* type */
+  --tn-font:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --tn-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --tn-fs-xs: 11px;
+  --tn-fs-sm: 12px;
+  --tn-fs-md: 13px;
+  --tn-fs-lg: 15px;
+
+  --tn-row-h: 28px;
+  --tn-nav-w: 240px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tn-accent: #818cf8;
+    --tn-accent-hover: #a5b4fc;
+    --tn-bg: #18181b;
+    --tn-bg-sunken: #121215;
+    --tn-bg-raised: #232327;
+    --tn-bg-hover: #27272b;
+    --tn-fg: #f4f4f5;
+    --tn-fg-muted: #a1a1aa;
+    --tn-fg-faint: #71717a;
+    --tn-border: #2e2e33;
+    --tn-border-strong: #3f3f46;
+    --tn-shadow-1: 0 1px 2px rgb(0 0 0 / 40%);
+    --tn-shadow-2: 0 4px 14px rgb(0 0 0 / 45%);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--tn-bg);
+  color: var(--tn-fg);
+  font-family: var(--tn-font);
+  font-size: var(--tn-fs-md);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--tn-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--tn-accent);
+  outline-offset: 1px;
+}

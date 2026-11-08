@@ -1,0 +1,224 @@
+/* Shared layout primitives. Component-specific styles live beside components. */
+
+.tn-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.tn-header {
+  display: flex;
+  align-items: center;
+  gap: var(--tn-3);
+  padding: var(--tn-3) var(--tn-4);
+  border-bottom: 1px solid var(--tn-border);
+  background: var(--tn-bg-sunken);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tn-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--tn-2);
+  font-weight: 600;
+  font-size: var(--tn-fs-lg);
+}
+
+.tn-brand img {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--tn-r-sm);
+}
+
+.tn-spacer {
+  flex: 1;
+}
+
+.tn-main {
+  flex: 1;
+  padding: var(--tn-5) var(--tn-4);
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.tn-popup-body {
+  width: 340px;
+}
+
+.tn-card {
+  border: 1px solid var(--tn-border);
+  border-radius: var(--tn-r-md);
+  background: var(--tn-bg-raised);
+  padding: var(--tn-4);
+  box-shadow: var(--tn-shadow-1);
+}
+
+.tn-card + .tn-card {
+  margin-top: var(--tn-4);
+}
+
+.tn-h1 {
+  font-size: 18px;
+  font-weight: 650;
+  margin: 0 0 var(--tn-2);
+}
+
+.tn-h2 {
+  font-size: var(--tn-fs-lg);
+  font-weight: 600;
+  margin: 0 0 var(--tn-3);
+}
+
+.tn-muted {
+  color: var(--tn-fg-muted);
+}
+
+.tn-faint {
+  color: var(--tn-fg-faint);
+}
+
+.tn-small {
+  font-size: var(--tn-fs-sm);
+}
+
+.tn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--tn-fs-sm);
+  border: 1px solid var(--tn-border);
+  background: var(--tn-bg-sunken);
+  color: var(--tn-fg-muted);
+}
+
+.tn-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentcolor;
+  opacity: 0.55;
+}
+
+.tn-pill--ok {
+  color: var(--tn-ok);
+  border-color: color-mix(in srgb, var(--tn-ok) 35%, var(--tn-border));
+}
+
+.tn-pill--warn {
+  color: var(--tn-warn);
+  border-color: color-mix(in srgb, var(--tn-warn) 35%, var(--tn-border));
+}
+
+.tn-pill--err {
+  color: var(--tn-danger);
+  border-color: color-mix(in srgb, var(--tn-danger) 35%, var(--tn-border));
+}
+
+.tn-kbd {
+  font-family: var(--tn-mono);
+  font-size: var(--tn-fs-xs);
+  padding: 1px 5px;
+  border: 1px solid var(--tn-border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--tn-r-sm);
+  background: var(--tn-bg-sunken);
+}
+
+.tn-empty {
+  border: 1px dashed var(--tn-border-strong);
+  border-radius: var(--tn-r-md);
+  padding: var(--tn-5);
+  text-align: center;
+  color: var(--tn-fg-muted);
+}
+
+.tn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tn-list > li {
+  padding: var(--tn-2) 0;
+  border-bottom: 1px solid var(--tn-border);
+}
+
+.tn-list > li:last-child {
+  border-bottom: 0;
+}
+
+.tn-split {
+  display: grid;
+  grid-template-columns: var(--tn-nav-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.tn-nav {
+  border-inline-end: 1px solid var(--tn-border);
+  background: var(--tn-bg-sunken);
+  padding: var(--tn-3);
+  font-size: var(--tn-fs-md);
+}
+
+.tn-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--tn-2);
+  padding: 4px var(--tn-2);
+  border-radius: var(--tn-r-sm);
+  color: var(--tn-fg-muted);
+}
+
+.tn-nav-item--active {
+  background: var(--tn-bg-selected);
+  color: var(--tn-fg);
+  font-weight: 550;
+}
+
+.tn-content {
+  padding: var(--tn-4) var(--tn-5);
+  min-width: 0;
+}
+
+.tn-skel {
+  height: var(--tn-row-h);
+  border-radius: var(--tn-r-sm);
+  background: linear-gradient(
+    90deg,
+    var(--tn-bg-hover) 25%,
+    color-mix(in srgb, var(--tn-bg-hover) 55%, var(--tn-bg)) 50%,
+    var(--tn-bg-hover) 75%
+  );
+  background-size: 200% 100%;
+  animation: tn-shimmer 1.4s linear infinite;
+}
+
+@keyframes tn-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tn-skel {
+    animation: none;
+  }
+}
+
+.tn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tn-3);
+}
+
+.tn-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tn-2);
+}
