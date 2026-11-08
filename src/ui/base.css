@@ -315,3 +315,134 @@
   color: var(--tn-fg-faint);
   font-size: var(--tn-fs-xs);
 }
+
+/* header links ----------------------------------------------------------- */
+
+.tn-header-links {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.tn-link {
+  border: 0;
+  background: none;
+  color: var(--tn-fg-muted);
+  font-size: var(--tn-fs-sm);
+  padding: 2px 6px;
+  border-radius: var(--tn-r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tn-link:hover {
+  background: var(--tn-bg-hover);
+  color: var(--tn-fg);
+}
+
+/* page chrome shared by options, sync and import ------------------------ */
+/* Options surface: a single readable column of sections. */
+
+.tn-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--tn-6) var(--tn-4) var(--tn-6);
+}
+
+.tn-page-head {
+  display: flex;
+  align-items: center;
+  gap: var(--tn-3);
+  margin-bottom: var(--tn-5);
+}
+
+.tn-page-head img {
+  border-radius: var(--tn-r-md);
+}
+
+.tn-page-head h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.tn-page-head p {
+  margin: 2px 0 0;
+}
+
+.tn-status {
+  margin-inline-start: auto;
+  color: var(--tn-ok);
+  font-size: var(--tn-fs-sm);
+}
+
+.tn-section {
+  border: 1px solid var(--tn-border);
+  border-radius: var(--tn-r-md);
+  background: var(--tn-bg-raised);
+  padding: var(--tn-4);
+  margin-bottom: var(--tn-4);
+}
+
+.tn-section h2 {
+  margin: 0 0 var(--tn-3);
+  font-size: var(--tn-fs-lg);
+  font-weight: 600;
+}
+
+.tn-setting {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tn-4);
+  padding: var(--tn-2) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--tn-border) 60%, transparent);
+}
+
+.tn-setting:last-child {
+  border-bottom: 0;
+}
+
+.tn-setting--stack {
+  flex-direction: column;
+  gap: var(--tn-2);
+}
+
+.tn-setting-label {
+  flex: 0 0 200px;
+  padding-top: 4px;
+  color: var(--tn-fg-muted);
+  font-size: var(--tn-fs-md);
+}
+
+.tn-setting-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tn-setting select,
+.tn-setting textarea {
+  font: inherit;
+  padding: 5px 7px;
+  border-radius: var(--tn-r-sm);
+  border: 1px solid var(--tn-border-strong);
+  background: var(--tn-bg);
+  color: var(--tn-fg);
+  max-width: 340px;
+}
+
+.tn-setting textarea {
+  max-width: 100%;
+  font-family: var(--tn-mono);
+  font-size: var(--tn-fs-sm);
+  resize: vertical;
+}
+
+.tn-button-row {
+  display: flex;
+  gap: var(--tn-2);
+  flex-wrap: wrap;
+  margin-top: var(--tn-2);
+}

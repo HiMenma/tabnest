@@ -49,7 +49,8 @@ Explicitly **not** done:
 
 ## Retention
 
-- Local library: until the user deletes it. Trash keeps records 90 days.
+- Local library: until the user deletes it. The trash is emptied by the user,
+  not by a timer.
 - Tombstones: 90 days, then garbage collected (this is what stops an offline
   device resurrecting deletions).
 - Remote chunks: until the owning device compacts them; a snapshot replaces its

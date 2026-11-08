@@ -1,4 +1,4 @@
-import { type DragEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type DragEvent, useEffect, useRef, useState } from "react";
 import type { Id, Node, TabItem } from "../../../../data/model";
 import type { SearchHit } from "../../../data/tree";
 import { formatDate } from "../../../data/tree";
@@ -99,28 +99,15 @@ function Row({
     else onEnterGroup(node.id);
   };
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      activate();
-      return;
-    }
-    if (event.key === " ") {
-      event.preventDefault();
-      onSelect(node.id, true, false);
-      return;
-    }
-    if (event.key === "F2") {
-      event.preventDefault();
-      setEditing(true);
-    }
-  };
-
+  // A row is a group of controls (checkbox, title button, quick-list toggle)
+  // rather than one interactive element, which is why it is not role="option".
+  // The row-level click is a mouse shortcut: every action it offers is also
+  // reachable from a focusable child.
   return (
+    // The row carries pointer shortcuts only; the checkbox selects and the title
+    // button opens, so every action is reachable without a mouse.
+    // biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: pointer shortcut on a row whose actions are keyboard-reachable.
     <div
-      role="option"
-      aria-selected={selected}
-      tabIndex={0}
       className={[
         "tn-row-item",
         selected ? "tn-row-item--selected" : "",
@@ -144,7 +131,6 @@ function Row({
       }}
       onClick={(event) => onSelect(node.id, event.metaKey || event.ctrlKey, event.shiftKey)}
       onDoubleClick={activate}
-      onKeyDown={onKeyDown}
     >
       <input
         type="checkbox"
@@ -163,6 +149,7 @@ function Row({
             ref={inputRef}
             className="tn-inline-input"
             defaultValue={label}
+            aria-label={label}
             onKeyDown={(event) => {
               if (event.key === "Enter") commit(event.currentTarget.value);
               if (event.key === "Escape") setEditing(false);
@@ -171,9 +158,28 @@ function Row({
             onClick={(event) => event.stopPropagation()}
           />
         ) : (
-          <span className="tn-row-title" title={label}>
+          // A real button so the row is keyboard-operable without nesting
+          // interactive elements inside another interactive role. Mouse clicks
+          // bubble to the row and select; Enter or Space opens.
+          <button
+            type="button"
+            className="tn-row-title tn-row-open"
+            title={label}
+            onClick={() => undefined}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.stopPropagation();
+                activate();
+              }
+              if (event.key === "F2") {
+                event.preventDefault();
+                setEditing(true);
+              }
+            }}
+          >
             {label}
-          </span>
+          </button>
         )}
         {!isTab && trail === undefined ? (
           <span className="tn-row-sub">{tCount("row.items", "row.itemOne", childCount)}</span>
@@ -252,14 +258,13 @@ export function List({
 
   return (
     <div className="tn-list-view" ref={ref} onScroll={onScroll} tabIndex={-1}>
-      <div
-        role="listbox"
-        aria-multiselectable="true"
+      <ul
+        className="tn-listbox"
         aria-label={t("list.records")}
         style={{ height: totalHeight, position: "relative" }}
       >
         {entries.slice(range.start, range.end).map((entry, offset) => (
-          <div
+          <li
             key={entry.node.id}
             style={{
               position: "absolute",
@@ -281,9 +286,9 @@ export function List({
               onDropRow={onDropRow}
               {...(entry.trail === undefined ? {} : { trail: entry.trail })}
             />
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

@@ -92,12 +92,12 @@ applying a remote batch.
 
 IndexedDB database `tabnest`, version 1:
 
-| Store       | Key          | Indexes                          | Contents                                |
-| ----------- | ------------ | -------------------------------- | --------------------------------------- |
-| `node`      | `id`         | `kind`, `groupType`, `updatedAt` | both record kinds                       |
-| `meta`      | `key`        | —                                | settings, device identity, sync cursors |
-| `change`    | `seq` (auto) | `state`                          | the sync journal                        |
-| `tombstone` | `id`         | `deletedAt`                      | deletions kept 90 days                  |
+| Store       | Key          | Indexes                          | Contents                                 |
+| ----------- | ------------ | -------------------------------- | ---------------------------------------- |
+| `node`      | `id`         | `kind`, `groupType`, `updatedAt` | both record kinds                        |
+| `meta`      | `key`        | —                                | settings, device identity, sync cursors  |
+| `change`    | `seq` (auto) | `state`                          | the sync journal                         |
+| `tombstone` | `id`         | `deletedAt`                      | deletion markers, expiring after 90 days |
 
 Seeded on first run: `root`, `quickList`, `trash` groups.
 

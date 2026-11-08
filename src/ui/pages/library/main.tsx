@@ -214,6 +214,35 @@ function LibraryApp() {
           <span className="tn-header-sub">
             {snapshot ? t("toolbar.stored", { count: snapshot.stats.tabs }) : t("app.loading")}
           </span>
+          <nav className="tn-header-links" aria-label={t("app.name")}>
+            <button
+              type="button"
+              className="tn-link"
+              onClick={() =>
+                void chrome.tabs.create({ url: chrome.runtime.getURL("pages/sync.html") })
+              }
+            >
+              {t("sync.title")}
+            </button>
+            <button
+              type="button"
+              className="tn-link"
+              onClick={() =>
+                void chrome.tabs.create({ url: chrome.runtime.getURL("pages/import.html") })
+              }
+            >
+              {t("io.title")}
+            </button>
+            <button
+              type="button"
+              className="tn-link"
+              onClick={() =>
+                void chrome.tabs.create({ url: chrome.runtime.getURL("pages/options.html") })
+              }
+            >
+              {t("options.title")}
+            </button>
+          </nav>
         </header>
 
         <Toolbar

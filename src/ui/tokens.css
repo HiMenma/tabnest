@@ -24,8 +24,8 @@
   --tn-bg-selected: color-mix(in srgb, var(--tn-accent) 12%, transparent);
 
   --tn-fg: light-dark(#18181b, #f4f4f5);
-  --tn-fg-muted: light-dark(#6b7280, #a1a1aa);
-  --tn-fg-faint: light-dark(#9ca3af, #71717a);
+  --tn-fg-muted: light-dark(#52525b, #b4b4bb);
+  --tn-fg-faint: light-dark(#5f6672, #9b9ba4);
   --tn-border: light-dark(#e4e4e7, #2e2e33);
   --tn-border-strong: light-dark(#d4d4d8, #3f3f46);
 

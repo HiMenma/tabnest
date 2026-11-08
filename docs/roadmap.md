@@ -68,12 +68,12 @@ command in the manifest does something.
 **Gate:** a real WebDAV directory and a deployed worker both round-trip a
 two-device sync; wrong passphrase fails loudly and never corrupts local data.
 
-## M6 — Store readiness
+## M6 — Store readiness ✅
 
-- [ ] Performance pass, accessibility pass, dark mode audit
-- [ ] Privacy policy page, listing copy, screenshots
-- [ ] Versioning policy and changelog
-- [ ] Review checklist: permissions, CSP, no remote code, single purpose
+- [x] Performance pass, accessibility pass, dark mode audit
+- [x] Privacy policy page, listing copy, screenshots
+- [x] Versioning policy and changelog
+- [x] Review checklist: permissions, CSP, no remote code, single purpose
 
 **Gate:** a fresh Chrome profile can install the zip, park tabs, sync to a
 WebDAV folder, and restore on a second profile.

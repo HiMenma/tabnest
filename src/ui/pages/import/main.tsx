@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { mount } from "../../mount";
-import "../../options.css";
 import { send } from "../../data/client";
 import { downloadFile, toExportDocument, toHtml } from "../../data/export";
 import { dedupe, flattenBookmarks, type ImportItem, parseJson, parseText } from "../../data/import";
 import { initLocale, t } from "../../i18n";
+import { mount } from "../../mount";
 
 initLocale();
 

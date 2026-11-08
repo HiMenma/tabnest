@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { mount } from "../../mount";
-import "../../options.css";
 import type { Settings } from "../../../data/model";
 import { send } from "../../data/client";
 import { initLocale, t } from "../../i18n";
+import { mount } from "../../mount";
 import { applyTheme } from "../../shared/theme";
 
 initLocale();

@@ -105,6 +105,12 @@ async function shoot({ locale, scheme, suffix }) {
       await io.waitForSelector(".tn-section", { timeout: 5000 });
       await io.screenshot({ path: resolve(outDir, "import-en-light.png"), fullPage: true });
       console.log("screenshots: import-en-light.png");
+
+      const sync = await context.newPage();
+      await sync.goto(`${origin}/pages/sync.html`);
+      await sync.waitForSelector(".tn-section", { timeout: 5000 });
+      await sync.screenshot({ path: resolve(outDir, "sync-en-light.png"), fullPage: true });
+      console.log("screenshots: sync-en-light.png");
     }
   } finally {
     await context.close();
