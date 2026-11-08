@@ -1,64 +1,245 @@
+import { type DragEvent, useEffect, useMemo, useRef } from "react";
 import { mount } from "../../mount";
-import { WorkerStatus } from "../../shared/WorkerStatus";
+import "./library.css";
+import { type Id, type Node, QUICK_LIST_ID, ROOT_ID, TRASH_ID } from "../../../data/model";
+import { actions } from "../../data/actions";
+import { startBroadcastBridge, useLibrary } from "../../data/store";
+import { buildMap, childrenOf, countTabs, directTabs, searchTabs } from "../../data/tree";
+import { Detail } from "./components/Detail";
+import { List } from "./components/List";
+import { Sidebar } from "./components/Sidebar";
+import { Toolbar } from "./components/Toolbar";
 
-const NAV = [
-  { id: "quickList", label: "Quick list", hint: "Pinned for later" },
-  { id: "root", label: "All lists", hint: "Folders and windows" },
-  { id: "archive", label: "Archive", hint: "Closed without deleting" },
-  { id: "trash", label: "Trash", hint: "Recoverable for 90 days" },
-];
+function headingFor(map: Map<Id, Node>, id: Id): string {
+  if (id === ROOT_ID) return "All lists";
+  if (id === QUICK_LIST_ID) return "Quick list";
+  if (id === TRASH_ID) return "Trash";
+  const node = map.get(id);
+  return node?.kind === "group" ? (node.label ?? "Folder") : "Library";
+}
 
 function LibraryApp() {
-  return (
-    <div className="tn-split">
-      <nav className="tn-nav">
-        <div className="tn-brand" style={{ padding: "4px 8px 12px" }}>
-          <img src="/icons/icon32.png" alt="" />
-          TabNest
-        </div>
-        {NAV.map((item, index) => (
-          <div
-            key={item.id}
-            className={`tn-nav-item${index === 1 ? " tn-nav-item--active" : ""}`}
-            title={item.hint}
-          >
-            {item.label}
-          </div>
-        ))}
-      </nav>
+  const snapshot = useLibrary((state) => state.snapshot);
+  const selectedGroupId = useLibrary((state) => state.selectedGroupId);
+  const query = useLibrary((state) => state.query);
+  const selection = useLibrary((state) => state.selection);
+  const error = useLibrary((state) => state.error);
+  const refresh = useLibrary((state) => state.refresh);
+  const selectGroup = useLibrary((state) => state.selectGroup);
+  const setQuery = useLibrary((state) => state.setQuery);
+  const setSelection = useLibrary((state) => state.setSelection);
+  const toggleSelection = useLibrary((state) => state.toggleSelection);
+  const clearSelection = useLibrary((state) => state.clearSelection);
+  const setError = useLibrary((state) => state.setError);
 
-      <section className="tn-content">
-        <header className="tn-row" style={{ marginBottom: "var(--tn-4)" }}>
-          <h1 className="tn-h1" style={{ margin: 0 }}>
-            All lists
-          </h1>
-          <span className="tn-spacer" />
-          <WorkerStatus />
+  const map = useMemo(() => buildMap(snapshot), [snapshot]);
+  const rows = useMemo(() => childrenOf(map, selectedGroupId), [map, selectedGroupId]);
+  const hits = useMemo(() => (query.trim() ? searchTabs(map, query) : undefined), [map, query]);
+  const visibleIds = useMemo(
+    () => (hits ? hits.map((hit) => hit.node.id) : rows.map((node) => node.id)),
+    [hits, rows],
+  );
+  const lastClicked = useRef<number | null>(null);
+
+  useEffect(() => {
+    void refresh();
+    return startBroadcastBridge();
+  }, [refresh]);
+
+  const inTrash = selectedGroupId === TRASH_ID;
+  const subtitle = useMemo(() => {
+    const tabs = directTabs(map, selectedGroupId).length;
+    const groups = childrenOf(map, selectedGroupId).filter((node) => node.kind === "group").length;
+    const deep = countTabs(map, selectedGroupId);
+    const parts = [`${tabs} tab${tabs === 1 ? "" : "s"}`];
+    if (groups > 0) parts.push(`${groups} group${groups === 1 ? "" : "s"}`);
+    if (deep !== tabs) parts.push(`${deep} in total`);
+    return parts.join(" · ");
+  }, [map, selectedGroupId]);
+
+  const singleTab = useMemo(() => {
+    if (selection.size !== 1) return undefined;
+    const [id] = [...selection];
+    const node = id === undefined ? undefined : map.get(id);
+    return node?.kind === "tab" ? node : undefined;
+  }, [selection, map]);
+
+  const onSelectRow = (id: Id, additive: boolean, shift: boolean): void => {
+    const index = visibleIds.indexOf(id);
+    if (shift && lastClicked.current !== null && index !== -1) {
+      const from = Math.min(lastClicked.current, index);
+      const to = Math.max(lastClicked.current, index);
+      setSelection(visibleIds.slice(from, to + 1));
+      return;
+    }
+    lastClicked.current = index === -1 ? null : index;
+    toggleSelection(id, additive);
+  };
+
+  const onOpen = (id: Id): void => {
+    void actions.open([id], "tab");
+  };
+
+  const onRename = (id: Id, label: string): void => {
+    const node = map.get(id);
+    if (!node) return;
+    if (node.kind === "tab") void actions.updateTitle(id, label);
+    else void actions.renameGroup(id, label);
+  };
+
+  const onToggleQuick = (id: Id, member: boolean): void => {
+    void actions.quickList(id, member);
+  };
+
+  const onDragStartRow = (id: Id, event: DragEvent): void => {
+    const ids = selection.has(id) && selection.size > 1 ? [...selection] : [id];
+    event.dataTransfer.setData("application/x-tabnest-ids", JSON.stringify(ids));
+    event.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDropRow = (targetId: Id, event: DragEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    const raw = event.dataTransfer.getData("application/x-tabnest-ids");
+    if (!raw) return;
+    let ids: Id[];
+    try {
+      ids = JSON.parse(raw) as Id[];
+    } catch {
+      return;
+    }
+    if (ids.length === 0) return;
+
+    const target = map.get(targetId);
+    if (!target) return;
+
+    if (target.kind === "group") {
+      void actions.move(ids, target.id);
+      return;
+    }
+
+    const parentId = target.parents[0];
+    const parent = parentId === undefined ? undefined : map.get(parentId);
+    if (parent?.kind !== "group") return;
+
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const after = event.clientY > rect.top + rect.height / 2;
+    const base = parent.children.indexOf(target.id);
+    const index = base === -1 ? parent.children.length : base + (after ? 1 : 0);
+    void actions.move(ids, parent.id, index);
+  };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        setSelection(visibleIds);
+        return;
+      }
+      if (event.key === "Escape") {
+        clearSelection();
+        if (query) setQuery("");
+        return;
+      }
+      if (event.key === "Enter" && selection.size > 0) {
+        event.preventDefault();
+        void actions.open([...selection], "tab");
+        return;
+      }
+      if ((event.key === "Delete" || event.key === "Backspace") && selection.size > 0 && !inTrash) {
+        event.preventDefault();
+        void actions.remove([...selection], "trash");
+        clearSelection();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [visibleIds, selection, inTrash, query, setSelection, clearSelection, setQuery]);
+
+  const selected = [...selection];
+
+  return (
+    <div className={`tn-library${singleTab ? " tn-library--with-detail" : ""}`}>
+      <Sidebar map={map} selectedId={selectedGroupId} onSelect={selectGroup} />
+
+      <section className="tn-library-main">
+        <header className="tn-header-row">
+          <h1>{hits ? "Search results" : headingFor(map, selectedGroupId)}</h1>
+          <span className="tn-header-sub">
+            {hits ? `${hits.length} match${hits.length === 1 ? "" : "es"}` : subtitle}
+          </span>
+          <div className="tn-toolbar-gap" />
+          <span className="tn-header-sub">
+            {snapshot ? `${snapshot.stats.tabs} tabs stored` : "loading…"}
+          </span>
         </header>
 
-        <div className="tn-card">
-          <h2 className="tn-h2">Scaffold is live</h2>
-          <p className="tn-muted tn-small" style={{ marginTop: 0 }}>
-            The build pipeline, manifest, icon generation and the page ↔ worker channel all work.
-            Data layer, capture and the tree UI arrive in the next milestones.
-          </p>
-          <div className="tn-stack">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="tn-skel" style={{ opacity: 1 - i * 0.18 }} />
-            ))}
-          </div>
-        </div>
+        <Toolbar
+          query={query}
+          onQuery={setQuery}
+          selectionCount={selection.size}
+          inTrash={inTrash}
+          onParkWindow={() => void actions.parkWindow()}
+          onParkTab={() => void actions.parkCurrentTab()}
+          onNewFolder={() => {
+            const label = window.prompt("Folder name");
+            if (label) void actions.newFolder(label, selectedGroupId);
+          }}
+          onOpenSelected={() => void actions.open(selected, "tab")}
+          onArchiveSelected={() => {
+            for (const id of selected) void actions.setArchived(id, true);
+          }}
+          onDeleteSelected={() => {
+            void actions.remove(selected, "trash");
+            clearSelection();
+          }}
+          onRestoreSelected={() => {
+            void actions.restore(selected);
+            clearSelection();
+          }}
+          onEmptyTrash={() => {
+            const trashed = childrenOf(map, TRASH_ID).map((node) => node.id);
+            if (trashed.length === 0) return;
+            void actions.remove(trashed, "purge");
+          }}
+        />
 
-        <div className="tn-card">
-          <h2 className="tn-h2">Next</h2>
-          <ul className="tn-list tn-small tn-muted">
-            <li>M1 — IndexedDB model, URL canonicalisation, the eight parking actions</li>
-            <li>M2 — tree, virtual list, search, drag and drop, inline editing</li>
-            <li>M3 — import/export, options, keyboard commands, omnibox, i18n</li>
-            <li>M4 — sync engine and the chrome.storage.sync backend</li>
-          </ul>
-        </div>
+        {error ? (
+          <button type="button" className="tn-error-bar" onClick={() => setError(null)}>
+            {error} — dismiss
+          </button>
+        ) : null}
+
+        <List
+          rows={rows}
+          hits={hits}
+          selection={selection}
+          onSelect={onSelectRow}
+          onOpen={onOpen}
+          onEnterGroup={(id) => selectGroup(id)}
+          onRename={onRename}
+          onToggleQuick={onToggleQuick}
+          onDragStartRow={onDragStartRow}
+          onDropRow={onDropRow}
+        />
       </section>
+
+      {singleTab ? (
+        <Detail
+          key={singleTab.id}
+          map={map}
+          tab={singleTab}
+          onSaveTitle={(id, title) => void actions.updateTitle(id, title)}
+          onSaveNotes={(id, notes) => void actions.updateNotes(id, notes)}
+          onSaveRating={(id, rating) => void actions.updateRating(id, rating)}
+          onSaveUrl={(id, url) => void actions.updateUrl(id, url)}
+          onOpen={(id) => void actions.open([id], "tab")}
+          onArchive={(id, archived) => void actions.setArchived(id, archived)}
+        />
+      ) : null}
     </div>
   );
 }
